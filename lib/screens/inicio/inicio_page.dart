@@ -4,6 +4,7 @@ import '../../theme/app_theme.dart';
 import '../autenticacion/login_page.dart';
 import '../autenticacion/registro_page.dart';
 import '../publicaciones/crear_publicacion_page.dart';
+import '../publicaciones/buscar_mascotas_page.dart';
 
 class InicioPage extends StatelessWidget {
   const InicioPage({super.key});
@@ -118,24 +119,17 @@ class InicioPage extends StatelessWidget {
               // BUSCAR
               ElevatedButton.icon(
                 onPressed: () {
-                  // Más adelante llevará a la búsqueda de mascotas.
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BuscarMascotasPage(),
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.search),
                 label: const Text('Buscar mascotas'),
               ),
 
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CrearPublicacionPage(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.add_a_photo_outlined),
-                label: const Text('Publicar mascota'),
-              ),
               const SizedBox(height: 14),
 
               // REGISTRARSE

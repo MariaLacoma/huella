@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+
 import '../../theme/app_theme.dart';
 import 'editar_perfil_page.dart';
 import '../inicio/inicio_page.dart';
+
+import '../publicaciones/buscar_mascotas_page.dart';
+
+import '../publicaciones/crear_publicacion_page.dart';
 
 class PerfilPage extends StatefulWidget {
   final int idUsuario;
@@ -79,13 +84,18 @@ class _PerfilPageState extends State<PerfilPage> {
               const SizedBox(height: 30),
 
               // Tarjeta con los datos
+              // Tarjeta con los datos
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
                   child: Column(
                     children: [
                       ListTile(
                         contentPadding: EdgeInsets.zero,
+                        dense: true,
                         leading: const Icon(
                           Icons.person_outline,
                           color: AppTheme.verdePrincipal,
@@ -93,24 +103,25 @@ class _PerfilPageState extends State<PerfilPage> {
                         title: const Text(
                           'Nombre',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             color: AppTheme.textoSecundario,
                           ),
                         ),
                         subtitle: Text(
                           nombreActual,
                           style: const TextStyle(
-                            fontSize: 17,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.textoPrincipal,
                           ),
                         ),
                       ),
 
-                      const Divider(),
+                      const Divider(height: 1),
 
                       ListTile(
                         contentPadding: EdgeInsets.zero,
+                        dense: true,
                         leading: const Icon(
                           Icons.email_outlined,
                           color: AppTheme.verdePrincipal,
@@ -118,24 +129,25 @@ class _PerfilPageState extends State<PerfilPage> {
                         title: const Text(
                           'Correo electrónico',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             color: AppTheme.textoSecundario,
                           ),
                         ),
                         subtitle: Text(
                           widget.email,
                           style: const TextStyle(
-                            fontSize: 17,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.textoPrincipal,
                           ),
                         ),
                       ),
 
-                      const Divider(),
+                      const Divider(height: 1),
 
                       ListTile(
                         contentPadding: EdgeInsets.zero,
+                        dense: true,
                         leading: const Icon(
                           Icons.phone_outlined,
                           color: AppTheme.verdePrincipal,
@@ -143,16 +155,52 @@ class _PerfilPageState extends State<PerfilPage> {
                         title: const Text(
                           'Teléfono',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             color: AppTheme.textoSecundario,
                           ),
                         ),
                         subtitle: Text(
-                          telefonoActual,
+                          telefonoActual.isEmpty
+                              ? 'No registrado'
+                              : telefonoActual,
                           style: const TextStyle(
-                            fontSize: 17,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.textoPrincipal,
+                          ),
+                        ),
+                      ),
+
+                      TextButton.icon(
+                        onPressed: () async {
+                          final resultado = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EditarPerfilPage(
+                                idUsuario: widget.idUsuario,
+                                nombre: nombreActual,
+                                email: widget.email,
+                                telefono: telefonoActual,
+                              ),
+                            ),
+                          );
+
+                          if (resultado != null) {
+                            setState(() {
+                              nombreActual = resultado['nombre'];
+                              telefonoActual = resultado['telefono'];
+                            });
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.edit_outlined,
+                          color: AppTheme.verdePrincipal,
+                        ),
+                        label: const Text(
+                          'Modificar datos',
+                          style: TextStyle(
+                            color: AppTheme.verdePrincipal,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
@@ -164,32 +212,39 @@ class _PerfilPageState extends State<PerfilPage> {
               const SizedBox(height: 24),
 
               // Modificar datos
+              const SizedBox(height: 12),
+
+              // Buscar mascotas
               ElevatedButton.icon(
-                onPressed: () async {
-                  final resultado = await Navigator.push(
+                onPressed: () {
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => EditarPerfilPage(
-                        idUsuario: widget.idUsuario,
-                        nombre: nombreActual,
-                        email: widget.email,
-                        telefono: telefonoActual,
-                      ),
+                      builder: (context) => const BuscarMascotasPage(),
                     ),
                   );
-
-                  if (resultado != null) {
-                    setState(() {
-                      nombreActual = resultado['nombre'];
-                      telefonoActual = resultado['telefono'];
-                    });
-                  }
                 },
-                icon: const Icon(Icons.edit_outlined),
-                label: const Text('Modificar datos'),
+                icon: const Icon(Icons.search),
+                label: const Text('Buscar mascotas'),
               ),
 
               const SizedBox(height: 12),
+              // Publicar mascota
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          CrearPublicacionPage(idUsuario: widget.idUsuario),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add_a_photo_outlined),
+                label: const Text('Nueva publicación'),
+              ),
+
+              const SizedBox(height: 24),
 
               // Cerrar sesión
               OutlinedButton.icon(
