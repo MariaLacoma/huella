@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../theme/app_theme.dart';
+import '../../config/api_config.dart';
 
 class RegistroPage extends StatefulWidget {
   const RegistroPage({super.key});
@@ -17,7 +18,7 @@ class _RegistroPageState extends State<RegistroPage> {
   final telefonoController = TextEditingController();
   final contrasenaController = TextEditingController();
 
-  final String urlRegistro = 'http://10.0.2.2/huella_api/registro.php';
+ final String urlRegistro = '${ApiConfig.baseUrl}/registro.php';
   bool nombreError = false;
   bool emailError = false;
   bool contrasenaError = false;

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import '../../theme/app_theme.dart';
 import '../administrador/panel_administrador_page.dart';
 import '../perfil/perfil_page.dart';
+import '../../config/api_config.dart';
 
 
 class LoginPage extends StatefulWidget {
@@ -21,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   String mensajeEmailError = '';
   bool _ocultarContrasena = true;
 
-  final String urlLogin = 'http://10.0.2.2/huella_api/login.php';
+ final String urlLogin = '${ApiConfig.baseUrl}/login.php';
 
   @override
   void dispose() {

@@ -8,6 +8,8 @@ import '../publicaciones/buscar_mascotas_page.dart';
 
 import '../publicaciones/crear_publicacion_page.dart';
 
+import '../publicaciones/mis_publicaciones_page.dart';
+
 class PerfilPage extends StatefulWidget {
   final int idUsuario;
   final String nombre;
@@ -83,7 +85,6 @@ class _PerfilPageState extends State<PerfilPage> {
 
               const SizedBox(height: 30),
 
-              // Tarjeta con los datos
               // Tarjeta con los datos
               Card(
                 child: Padding(
@@ -220,7 +221,8 @@ class _PerfilPageState extends State<PerfilPage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const BuscarMascotasPage(),
+                      builder: (context) =>
+                          BuscarMascotasPage(idUsuario: widget.idUsuario),
                     ),
                   );
                 },
@@ -229,6 +231,23 @@ class _PerfilPageState extends State<PerfilPage> {
               ),
 
               const SizedBox(height: 12),
+
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          MisPublicacionesPage(idUsuario: widget.idUsuario),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.list_alt),
+                label: const Text('Mis publicaciones'),
+              ),
+
+              const SizedBox(height: 12),
+
               // Publicar mascota
               ElevatedButton.icon(
                 onPressed: () {

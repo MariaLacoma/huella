@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../theme/app_theme.dart';
+import '../../config/api_config.dart';
 
 
 class UsuariosPage extends StatefulWidget {
@@ -12,8 +13,8 @@ class UsuariosPage extends StatefulWidget {
 }
 
 class _UsuariosPageState extends State<UsuariosPage> {
-  final String urlUsuarios = 'http://10.0.2.2/huella_api/listar_usuarios.php';
-
+ final String urlUsuarios =
+    '${ApiConfig.baseUrl}/listar_usuarios.php';
   List<dynamic> usuarios = [];
   bool cargando = true;
 

@@ -1,7 +1,11 @@
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../../theme/app_theme.dart';
+import '../../config/api_config.dart';
+
+
 
 class EditarPerfilPage extends StatefulWidget {
   final int idUsuario;
@@ -18,7 +22,8 @@ class EditarPerfilPage extends StatefulWidget {
   });
 
   @override
-  State<EditarPerfilPage> createState() => _EditarPerfilPageState();
+  State<EditarPerfilPage> createState() =>
+      _EditarPerfilPageState();
 }
 
 class _EditarPerfilPageState extends State<EditarPerfilPage> {
@@ -80,7 +85,10 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
               const Text(
                 'Actualizá tu información personal.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: AppTheme.textoSecundario),
+                style: TextStyle(
+                  fontSize: 15,
+                  color: AppTheme.textoSecundario,
+                ),
               ),
 
               const SizedBox(height: 30),
@@ -106,75 +114,112 @@ class _EditarPerfilPageState extends State<EditarPerfilPage> {
                 ),
               ),
 
+             
               const SizedBox(height: 24),
+
+             
+              
+            
+
+              const SizedBox(height: 24),
+
+
+              const SizedBox(height: 24),
+
+
+              const SizedBox(height: 12),
 
               // Guardar cambios
               ElevatedButton.icon(
+
                 onPressed: () async {
-                  final respuesta = await http.post(
-                    Uri.parse(
-                      'http://10.0.2.2/huella_api/actualizar_usuario.php',
-                    ),
-                    body: {
-                      'id_usuario': widget.idUsuario.toString(),
-                      'nombre': nombreController.text,
-                      'telefono': telefonoController.text,
-                    },
-                  );
+                  print('TOQUE EL BOTON GUARDAR');
 
-                  print(respuesta.body);
-
-                  if (respuesta.body.contains('"ok":true')) {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          title: const Text(
-                            '¡Listo!',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.verdePrincipal,
-                            ),
-                          ),
-                          content: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            child: Text(
-                              'Tus datos fueron actualizados correctamente.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,
-                                height: 1.4,
-                                color: AppTheme.textoSecundario,
-                              ),
-                            ),
-                          ),
-                          actionsAlignment: MainAxisAlignment.center,
-                          actions: [
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                Navigator.pop(context, {
-                                  'nombre': nombreController.text,
-                                  'telefono': telefonoController.text,
-                                });
-                              },
-                              child: const Text('Aceptar'),
-                            ),
-                          ],
-                        );
+                  try {
+                    final respuesta = await http.post(
+                      Uri.parse(
+                        '${ApiConfig.baseUrl}/actualizar_usuario.php',
+                      ),
+                      body: {
+                        'id_usuario': widget.idUsuario.toString(),
+                        'nombre': nombreController.text,
+                        'telefono': telefonoController.text,
                       },
                     );
-                  } else {
+
+                    print('RESPUESTA DEL SERVIDOR:');
+                    print(respuesta.body);
+                    print('CODIGO HTTP: ${respuesta.statusCode}');
+
+                    if (!mounted) return;
+
+                    if (respuesta.body.contains('"ok":true')) {
+                      showDialog(
+                        context: context,
+                        builder: (dialogContext) {
+                          return AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            title: const Text(
+                              '¡Listo!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.verdePrincipal,
+                              ),
+                            ),
+                            content: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              child: Text(
+                                'Tus datos fueron actualizados correctamente.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  height: 1.4,
+                                  color: AppTheme.textoSecundario,
+                                ),
+                              ),
+                            ),
+                            actionsAlignment: MainAxisAlignment.center,
+                            actions: [
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(dialogContext);
+                                  Navigator.pop(context, {
+                                    'nombre': nombreController.text,
+                                    'telefono': telefonoController.text,
+                                  });
+                                },
+                                child: const Text('Aceptar'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'No se pudieron actualizar los datos: '
+                            '${respuesta.body}',
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    print('ERROR AL ACTUALIZAR PERFIL: $e');
+
+                    if (!mounted) return;
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('No se pudieron actualizar los datos'),
+                        content: Text(
+                          'Ocurrió un error al guardar los datos.',
+                        ),
                       ),
                     );
                   }

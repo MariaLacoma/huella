@@ -7,11 +7,15 @@ import '../../theme/app_theme.dart';
 class UbicacionPublicacionPage extends StatefulWidget {
   final double latitudInicial;
   final double longitudInicial;
+  final bool soloLectura;
+  final String titulo;
 
   const UbicacionPublicacionPage({
     super.key,
     required this.latitudInicial,
     required this.longitudInicial,
+    this.soloLectura = false,
+    this.titulo = 'Seleccionar ubicación',
   });
 
   @override
@@ -35,7 +39,7 @@ class _UbicacionPublicacionPageState extends State<UbicacionPublicacionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Seleccionar ubicación')),
+      appBar: AppBar(title: Text(widget.titulo)),
       body: Column(
         children: [
           const Padding(
@@ -46,49 +50,60 @@ class _UbicacionPublicacionPageState extends State<UbicacionPublicacionPage> {
               style: TextStyle(fontSize: 16, color: AppTheme.textoPrincipal),
             ),
           ),
+
           Expanded(
-            child: Stack(
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: ubicacionSeleccionada,
+                initialZoom: 16,
+                onPositionChanged: (camera, hasGesture) {
+                  if (hasGesture && !widget.soloLectura) {
+                    setState(() {
+                      ubicacionSeleccionada = camera.center;
+                    });
+                  }
+                },
+              ),
               children: [
-                FlutterMap(
-                  options: MapOptions(
-                    initialCenter: ubicacionSeleccionada,
-                    initialZoom: 16,
-                    onPositionChanged: (camera, hasGesture) {
-                      if (hasGesture) {
-                        ubicacionSeleccionada = camera.center;
-                      }
-                    },
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.example.huella',
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.huella',
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: widget.soloLectura
+                          ? LatLng(
+                              widget.latitudInicial,
+                              widget.longitudInicial,
+                            )
+                          : ubicacionSeleccionada,
+                      width: 50,
+                      height: 50,
+                      alignment: Alignment.topCenter,
+                      child: const Icon(
+                        Icons.location_pin,
+                        size: 50,
+                        color: AppTheme.verdePrincipal,
+                      ),
                     ),
                   ],
-                ),
-
-                const Center(
-                  child: Icon(
-                    Icons.location_pin,
-                    size: 50,
-                    color: AppTheme.verdePrincipal,
-                  ),
                 ),
               ],
             ),
           ),
 
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context, ubicacionSeleccionada);
-              },
-              icon: const Icon(Icons.check),
-              label: const Text('Confirmar ubicación'),
+          if (!widget.soloLectura)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context, ubicacionSeleccionada);
+                },
+                icon: const Icon(Icons.check),
+                label: const Text('Confirmar ubicación'),
+              ),
             ),
-          ),
         ],
       ),
     );

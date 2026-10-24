@@ -10,6 +10,8 @@ import 'package:http/http.dart' as http;
 import '../../theme/app_theme.dart';
 import 'ubicacion_publicacion_page.dart';
 
+import '../../config/api_config.dart';
+
 class CrearPublicacionPage extends StatefulWidget {
   final int idUsuario;
 
@@ -174,9 +176,9 @@ class _CrearPublicacionPageState extends State<CrearPublicacionPage> {
     if (ubicacionConfirmada == null) {
       mostrarMensajeAdvertencia('Primero confirmá la ubicación.');
     }
-
-    final url = Uri.parse('http://10.0.2.2/huella_api/crear_publicacion.php');
-
+final url = Uri.parse(
+  '${ApiConfig.baseUrl}/crear_publicacion.php',
+);
     final solicitud = http.MultipartRequest('POST', url);
 
     solicitud.fields['id_usuario'] = widget.idUsuario.toString();
