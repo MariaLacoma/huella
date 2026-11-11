@@ -1,13 +1,10 @@
-
-import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../config/api_config.dart';
 import '../../theme/app_theme.dart';
 import 'ubicacion_publicacion_page.dart';
 
@@ -22,12 +19,10 @@ class EditarPublicacionPage extends StatefulWidget {
   });
 
   @override
-  State<EditarPublicacionPage> createState() =>
-      _EditarPublicacionPageState();
+  State<EditarPublicacionPage> createState() => _EditarPublicacionPageState();
 }
 
-class _EditarPublicacionPageState
-    extends State<EditarPublicacionPage> {
+class _EditarPublicacionPageState extends State<EditarPublicacionPage> {
   final ImagePicker selectorImagen = ImagePicker();
 
   late final TextEditingController nombreController;
@@ -38,9 +33,11 @@ class _EditarPublicacionPageState
 
   late String tipoPublicacion;
   late LatLng ubicacionConfirmada;
-  XFile? imagenSeleccionada;
 
+  XFile? imagenSeleccionada;
   bool guardando = false;
+
+  final SupabaseClient supabase = Supabase.instance.client;
 
   @override
   void initState() {
@@ -48,22 +45,31 @@ class _EditarPublicacionPageState
 
     final publicacion = widget.publicacion;
 
-    nombreController =
-        TextEditingController(text: publicacion['nombre']?.toString() ?? '');
-    especieController =
-        TextEditingController(text: publicacion['especie']?.toString() ?? '');
-    sexoController =
-        TextEditingController(text: publicacion['sexo']?.toString() ?? '');
-    descripcionController =
-        TextEditingController(text: publicacion['descripcion']?.toString() ?? '');
-    fechaController =
-        TextEditingController(text: publicacion['fecha']?.toString() ?? '');
+    nombreController = TextEditingController(
+      text: publicacion['nombre']?.toString() ?? '',
+    );
 
-    tipoPublicacion = publicacion['tipo'].toString();
+    especieController = TextEditingController(
+      text: publicacion['especie']?.toString() ?? '',
+    );
+
+    sexoController = TextEditingController(
+      text: publicacion['sexo']?.toString() ?? '',
+    );
+
+    descripcionController = TextEditingController(
+      text: publicacion['descripcion']?.toString() ?? '',
+    );
+
+    fechaController = TextEditingController(
+      text: publicacion['fecha']?.toString() ?? '',
+    );
+
+    tipoPublicacion = publicacion['tipo']?.toString() ?? 'Perdida';
 
     ubicacionConfirmada = LatLng(
-      double.parse(publicacion['latitud'].toString()),
-      double.parse(publicacion['longitud'].toString()),
+      double.tryParse(publicacion['latitud']?.toString() ?? '') ?? 0.0,
+      double.tryParse(publicacion['longitud']?.toString() ?? '') ?? 0.0,
     );
   }
 
@@ -78,14 +84,20 @@ class _EditarPublicacionPageState
   }
 
   Future<void> seleccionarImagen() async {
-    final imagen = await selectorImagen.pickImage(
-      source: ImageSource.gallery,
-    );
+    try {
+      final imagen = await selectorImagen.pickImage(
+        source: ImageSource.gallery,
+      );
 
-    if (imagen != null && mounted) {
-      setState(() {
-        imagenSeleccionada = imagen;
-      });
+      if (imagen != null && mounted) {
+        setState(() {
+          imagenSeleccionada = imagen;
+        });
+      }
+    } catch (error) {
+      if (!mounted) return;
+
+      mostrarMensaje('No se pudo seleccionar la fotografía.', esError: true);
     }
   }
 
@@ -107,15 +119,59 @@ class _EditarPublicacionPageState
     }
   }
 
+  String obtenerRutaFotoActual() {
+    final foto = widget.publicacion['foto']?.toString() ?? '';
+
+    if (foto.startsWith('fotos-mascotas/')) {
+      return foto.substring('fotos-mascotas/'.length);
+    }
+
+    return foto;
+  }
+
+  Future<String?> subirNuevaFoto() async {
+    if (imagenSeleccionada == null) {
+      return obtenerRutaFotoActual().isEmpty ? null : obtenerRutaFotoActual();
+    }
+
+    final bytes = await imagenSeleccionada!.readAsBytes();
+    final extension = imagenSeleccionada!.name.contains('.')
+        ? imagenSeleccionada!.name.split('.').last.toLowerCase()
+        : 'jpg';
+
+    final nombreArchivo =
+        'mascota_${widget.idUsuario}_${DateTime.now().millisecondsSinceEpoch}.$extension';
+
+    final ruta = '${widget.idUsuario}/$nombreArchivo';
+
+    await supabase.storage
+        .from('fotos-mascotas')
+        .uploadBinary(
+          ruta,
+          bytes,
+          fileOptions: FileOptions(
+            contentType: 'image/$extension',
+            upsert: false,
+          ),
+        );
+
+    return ruta;
+  }
+
   Future<void> guardarCambios() async {
-    if (descripcionController.text.trim().isEmpty ||
-        especieController.text.trim().isEmpty ||
+    if (especieController.text.trim().isEmpty ||
+        descripcionController.text.trim().isEmpty ||
         fechaController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Completá los campos obligatorios.'),
-        ),
-      );
+      mostrarMensaje('Completá los campos obligatorios.', esError: true);
+      return;
+    }
+
+    final idPublicacion = int.tryParse(
+      widget.publicacion['id_publicacion'].toString(),
+    );
+
+    if (idPublicacion == null) {
+      mostrarMensaje('No se pudo identificar la publicación.', esError: true);
       return;
     }
 
@@ -124,124 +180,72 @@ class _EditarPublicacionPageState
     });
 
     try {
-      final solicitud = http.MultipartRequest(
-        'POST',
-        Uri.parse(
-          '${ApiConfig.baseUrl}/actualizar_publicacion.php',
-        ),
-      );
+      final foto = await subirNuevaFoto();
 
-      solicitud.fields.addAll({
-        'id_publicacion':
-            widget.publicacion['id_publicacion'].toString(),
-        'id_usuario': widget.idUsuario.toString(),
+      final cambios = <String, dynamic>{
         'tipo': tipoPublicacion,
         'nombre': nombreController.text.trim(),
         'especie': especieController.text.trim(),
         'sexo': sexoController.text.trim(),
         'descripcion': descripcionController.text.trim(),
         'fecha': fechaController.text.trim(),
-        'latitud': ubicacionConfirmada.latitude.toString(),
-        'longitud': ubicacionConfirmada.longitude.toString(),
-      });
+        'latitud': ubicacionConfirmada.latitude,
+        'longitud': ubicacionConfirmada.longitude,
+        if (foto != null) 'foto': foto,
+      };
 
-      if (imagenSeleccionada != null) {
-        solicitud.files.add(
-          await http.MultipartFile.fromPath(
-            'foto',
-            imagenSeleccionada!.path,
-          ),
-        );
-      }
-
-      final respuesta = await solicitud.send();
-      final cuerpo = await respuesta.stream.bytesToString();
-      final datos = jsonDecode(cuerpo);
+      final resultado = await supabase
+          .from('publicacion')
+          .update(cambios)
+          .eq('id_publicacion', idPublicacion)
+          .eq('id_usuario', widget.idUsuario)
+          .select('id_publicacion')
+          .maybeSingle();
 
       if (!mounted) return;
 
-      if (datos['ok'] == true) {
-  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: const Color(0xFF238653),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 3),
-      content: const Row(
-        children: [
-          Icon(Icons.check_circle_outline, color: Colors.white),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Publicación actualizada correctamente.',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
+      if (resultado == null) {
+        mostrarMensaje(
+          'No se pudo actualizar la publicación. Verificá que sea tuya y que tengas permiso para modificarla.',
+          esError: true,
+        );
+        return;
+      }
 
-  Navigator.pop(context, true);
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-      } else {
-  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: const Color(0xFFB93838),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 3),
-      content: Row(
-        children: [
-          const Icon(Icons.error_outline, color: Colors.white),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              datos['mensaje']?.toString() ??
-                  'No se pudieron guardar los cambios.',
-              style: const TextStyle(color: Colors.white),
-            ),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF238653),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
           ),
-        ],
-      ),
-    ),
-  );
-}
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 3),
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: Colors.white),
+              SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Publicación actualizada correctamente.',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) return;
 
-     ScaffoldMessenger.of(context).hideCurrentSnackBar();
-ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(
-    behavior: SnackBarBehavior.floating,
-    backgroundColor: const Color(0xFFB93838),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-    ),
-    margin: const EdgeInsets.all(16),
-    duration: const Duration(seconds: 3),
-    content: const Row(
-      children: [
-        Icon(Icons.wifi_off, color: Colors.white),
-        SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            'Ocurrió un error al actualizar la publicación.',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      ],
-    ),
-  ),
-);
+      mostrarMensaje(
+        'Ocurrió un error al actualizar la publicación. Verificá tu conexión y los permisos de Supabase.',
+        esError: true,
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -251,13 +255,33 @@ ScaffoldMessenger.of(context).showSnackBar(
     }
   }
 
+  void mostrarMensaje(String mensaje, {bool esError = false}) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: esError
+            ? const Color(0xFFB93838)
+            : const Color(0xFF238653),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        margin: const EdgeInsets.all(16),
+        content: Text(mensaje, style: const TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final rutaFotoActual = obtenerRutaFotoActual();
+
+    final String? urlFotoActual = rutaFotoActual.isEmpty
+        ? null
+        : supabase.storage.from('fotos-mascotas').getPublicUrl(rutaFotoActual);
+
     return Scaffold(
       backgroundColor: AppTheme.fondo,
-      appBar: AppBar(
-        title: const Text('Editar publicación'),
-      ),
+      appBar: AppBar(title: const Text('Editar publicación')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -273,12 +297,11 @@ ScaffoldMessenger.of(context).showSnackBar(
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              initialValue: tipoPublicacion,
+              initialValue: tipoPublicacion == 'Encontrada'
+                  ? 'Encontrada'
+                  : 'Perdida',
               items: const [
-                DropdownMenuItem(
-                  value: 'Perdida',
-                  child: Text('Perdida'),
-                ),
+                DropdownMenuItem(value: 'Perdida', child: Text('Perdida')),
                 DropdownMenuItem(
                   value: 'Encontrada',
                   child: Text('Encontrada'),
@@ -310,17 +333,13 @@ ScaffoldMessenger.of(context).showSnackBar(
             const SizedBox(height: 16),
             TextField(
               controller: sexoController,
-              decoration: const InputDecoration(
-                labelText: 'Sexo (opcional)',
-              ),
+              decoration: const InputDecoration(labelText: 'Sexo (opcional)'),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: descripcionController,
               maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Descripción *',
-              ),
+              decoration: const InputDecoration(labelText: 'Descripción *'),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -332,8 +351,7 @@ ScaffoldMessenger.of(context).showSnackBar(
               ),
               onTap: () async {
                 final fechaActual =
-                    DateTime.tryParse(fechaController.text) ??
-                    DateTime.now();
+                    DateTime.tryParse(fechaController.text) ?? DateTime.now();
 
                 final fecha = await showDatePicker(
                   context: context,
@@ -342,11 +360,13 @@ ScaffoldMessenger.of(context).showSnackBar(
                   lastDate: DateTime(2100),
                 );
 
-                if (fecha != null) {
-                  fechaController.text =
-                      '${fecha.year.toString().padLeft(4, '0')}-'
-                      '${fecha.month.toString().padLeft(2, '0')}-'
-                      '${fecha.day.toString().padLeft(2, '0')}';
+                if (fecha != null && mounted) {
+                  setState(() {
+                    fechaController.text =
+                        '${fecha.year.toString().padLeft(4, '0')}-'
+                        '${fecha.month.toString().padLeft(2, '0')}-'
+                        '${fecha.day.toString().padLeft(2, '0')}';
+                  });
                 }
               },
             ),
@@ -361,22 +381,53 @@ ScaffoldMessenger.of(context).showSnackBar(
             ),
             const SizedBox(height: 8),
             if (imagenSeleccionada != null)
-              Image.file(
-                File(imagenSeleccionada!.path),
+              FutureBuilder<Uint8List>(
+                future: imagenSeleccionada!.readAsBytes(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Image.memory(
+                      snapshot.data!,
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.contain,
+                    );
+                  }
+
+                  return const SizedBox(
+                    height: 180,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                },
+              )
+            else if (urlFotoActual != null)
+              Image.network(
+                urlFotoActual,
                 height: 180,
                 width: double.infinity,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox(
+                    height: 180,
+                    child: Center(
+                      child: Icon(Icons.broken_image_outlined, size: 48),
+                    ),
+                  );
+                },
               )
             else
-              const Text(
-                'Se conservará la fotografía actual si no elegís otra.',
-                style: TextStyle(
-                  color: AppTheme.textoSecundario,
+              const SizedBox(
+                height: 100,
+                child: Center(
+                  child: Icon(
+                    Icons.pets,
+                    size: 48,
+                    color: AppTheme.textoSecundario,
+                  ),
                 ),
               ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
-              onPressed: seleccionarImagen,
+              onPressed: guardando ? null : seleccionarImagen,
               icon: const Icon(Icons.photo_library_outlined),
               label: const Text('Cambiar fotografía'),
             ),
@@ -390,13 +441,17 @@ ScaffoldMessenger.of(context).showSnackBar(
               ),
             ),
             const SizedBox(height: 8),
+            Text(
+              'Latitud: ${ubicacionConfirmada.latitude.toStringAsFixed(5)}\n'
+              'Longitud: ${ubicacionConfirmada.longitude.toStringAsFixed(5)}',
+              style: const TextStyle(color: AppTheme.textoSecundario),
+            ),
+            const SizedBox(height: 8),
             OutlinedButton.icon(
-              onPressed: seleccionarUbicacion,
+              onPressed: guardando ? null : seleccionarUbicacion,
               icon: const Icon(Icons.location_on_outlined),
               label: const Text('Modificar ubicación'),
             ),
-            const SizedBox(height: 8),
-          
             const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
@@ -406,14 +461,10 @@ ScaffoldMessenger.of(context).showSnackBar(
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.save_outlined),
-                label: Text(
-                  guardando ? 'Guardando...' : 'Guardar cambios',
-                ),
+                label: Text(guardando ? 'Guardando...' : 'Guardar cambios'),
               ),
             ),
           ],

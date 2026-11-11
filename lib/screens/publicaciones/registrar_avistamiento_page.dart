@@ -1,13 +1,10 @@
+
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../theme/app_theme.dart';
 import 'ubicacion_publicacion_page.dart';
-
-import 'dart:convert';
-
-import 'package:http/http.dart' as http;
-
-import '../../config/api_config.dart';
 
 class RegistrarAvistamientoPage extends StatefulWidget {
   final int idUsuario;
@@ -24,12 +21,15 @@ class RegistrarAvistamientoPage extends StatefulWidget {
       _RegistrarAvistamientoPageState();
 }
 
-class _RegistrarAvistamientoPageState extends State<RegistrarAvistamientoPage> {
+class _RegistrarAvistamientoPageState
+    extends State<RegistrarAvistamientoPage> {
   final descripcionController = TextEditingController();
+  final SupabaseClient supabase = Supabase.instance.client;
 
   DateTime fechaSeleccionada = DateTime.now();
   double? latitud;
   double? longitud;
+  bool guardando = false;
 
   @override
   void dispose() {
@@ -53,7 +53,7 @@ class _RegistrarAvistamientoPageState extends State<RegistrarAvistamientoPage> {
   }
 
   Future<void> seleccionarUbicacion() async {
-    final ubicacion = await Navigator.push(
+    final ubicacion = await Navigator.push<LatLng>(
       context,
       MaterialPageRoute(
         builder: (context) => UbicacionPublicacionPage(
@@ -71,127 +71,120 @@ class _RegistrarAvistamientoPageState extends State<RegistrarAvistamientoPage> {
     }
   }
 
+  void mostrarMensaje(String mensaje, {bool esError = false}) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: esError
+            ? const Color(0xFFB93838)
+            : const Color(0xFF238653),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+        content: Row(
+          children: [
+            Icon(
+              esError ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                mensaje,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> guardarAvistamiento() async {
     if (latitud == null || longitud == null) {
-  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: const Color(0xFFB93838),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 3),
-      content: const Row(
-        children: [
-          Icon(Icons.location_off, color: Colors.white),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Seleccioná la ubicación del avistamiento.',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-  return;
-}
+      mostrarMensaje(
+        'Seleccioná la ubicación del avistamiento.',
+        esError: true,
+      );
+      return;
+    }
+
+    final idPublicacion =
+        int.tryParse(widget.publicacion['id_publicacion'].toString());
+
+    if (idPublicacion == null) {
+      mostrarMensaje(
+        'No se pudo identificar la publicación.',
+        esError: true,
+      );
+      return;
+    }
+
+    final usuarioAutenticado = supabase.auth.currentUser;
+
+    if (usuarioAutenticado == null) {
+      mostrarMensaje(
+        'Iniciá sesión para registrar un avistamiento.',
+        esError: true,
+      );
+      return;
+    }
+
+    setState(() {
+      guardando = true;
+    });
 
     try {
-      final respuesta = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/registrar_avistamiento.php'),
-        body: {
-          'id_publicacion': widget.publicacion['id_publicacion'].toString(),
-          'id_usuario': widget.idUsuario.toString(),
-          'fecha':
-              '${fechaSeleccionada.year}-'
-              '${fechaSeleccionada.month.toString().padLeft(2, '0')}-'
-              '${fechaSeleccionada.day.toString().padLeft(2, '0')}',
-          'latitud': latitud.toString(),
-          'longitud': longitud.toString(),
-          'descripcion': descripcionController.text.trim(),
-        },
+      final fecha = '${fechaSeleccionada.year.toString().padLeft(4, '0')}-'
+          '${fechaSeleccionada.month.toString().padLeft(2, '0')}-'
+          '${fechaSeleccionada.day.toString().padLeft(2, '0')}';
+
+      await supabase.from('avistamiento').insert({
+        'id_publicacion': idPublicacion,
+        'id_usuario': widget.idUsuario,
+        'fecha': fecha,
+        'latitud': latitud,
+        'longitud': longitud,
+        'descripcion': descripcionController.text.trim(),
+      });
+
+      if (!mounted) return;
+
+      mostrarMensaje('Avistamiento registrado correctamente.');
+      Navigator.pop(context, true);
+    } catch (error) {
+      if (!mounted) return;
+
+      mostrarMensaje(
+        'No se pudo guardar el avistamiento. Verificá los permisos de Supabase.',
+        esError: true,
       );
 
-      final datos = jsonDecode(respuesta.body) as Map<String, dynamic>;
-
-      if (!mounted) return;
-
-      final bool guardadoCorrectamente =
-    respuesta.statusCode == 200 && datos['ok'] == true;
-
-ScaffoldMessenger.of(context).hideCurrentSnackBar();
-ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(
-    behavior: SnackBarBehavior.floating,
-    backgroundColor: guardadoCorrectamente
-        ? const Color(0xFF238653)
-        : const Color(0xFFB93838),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-    ),
-    margin: const EdgeInsets.all(16),
-    duration: const Duration(seconds: 3),
-    content: Row(
-      children: [
-        Icon(
-          guardadoCorrectamente ? Icons.check_circle : Icons.error_outline,
-          color: Colors.white,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            datos['mensaje']?.toString() ??
-                'No se pudo guardar el avistamiento.',
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-      ],
-    ),
-  ),
-);
-
-      if (respuesta.statusCode == 200 && datos['ok'] == true) {
-        Navigator.pop(context, true);
+      debugPrint('Error al registrar avistamiento: $error');
+    } finally {
+      if (mounted) {
+        setState(() {
+          guardando = false;
+        });
       }
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(
-    behavior: SnackBarBehavior.floating,
-    backgroundColor: const Color(0xFFB93838),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-    ),
-    margin: const EdgeInsets.all(16),
-    duration: const Duration(seconds: 3),
-    content: const Row(
-      children: [
-        Icon(Icons.wifi_off, color: Colors.white),
-        SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            'No se pudo conectar con el servidor.',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      ],
-    ),
-  ),
-);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final nombre = (widget.publicacion['nombre'] ?? '').toString().trim();
+    final especie =
+        (widget.publicacion['especie'] ?? 'Mascota').toString();
+
     return Scaffold(
       backgroundColor: AppTheme.fondo,
-      appBar: AppBar(title: const Text('Registrar avistamiento')),
+      appBar: AppBar(
+        title: const Text('Registrar avistamiento'),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -207,9 +200,7 @@ ScaffoldMessenger.of(context).showSnackBar(
             ),
             const SizedBox(height: 8),
             Text(
-              (widget.publicacion['nombre'] ?? '').toString().trim().isEmpty
-                  ? widget.publicacion['especie'].toString()
-                  : widget.publicacion['nombre'].toString(),
+              nombre.isEmpty ? especie : nombre,
               style: const TextStyle(
                 fontSize: 18,
                 color: AppTheme.textoPrincipal,
@@ -225,7 +216,7 @@ ScaffoldMessenger.of(context).showSnackBar(
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
-              onPressed: seleccionarFecha,
+              onPressed: guardando ? null : seleccionarFecha,
               icon: const Icon(Icons.calendar_month),
               label: Text(
                 '${fechaSeleccionada.day.toString().padLeft(2, '0')}/'
@@ -243,7 +234,7 @@ ScaffoldMessenger.of(context).showSnackBar(
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
-              onPressed: seleccionarUbicacion,
+              onPressed: guardando ? null : seleccionarUbicacion,
               icon: const Icon(Icons.location_on),
               label: Text(
                 latitud == null
@@ -251,6 +242,16 @@ ScaffoldMessenger.of(context).showSnackBar(
                     : 'Ubicación seleccionada',
               ),
             ),
+            if (latitud != null && longitud != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Latitud: ${latitud!.toStringAsFixed(5)}\n'
+                'Longitud: ${longitud!.toStringAsFixed(5)}',
+                style: const TextStyle(
+                  color: AppTheme.textoSecundario,
+                ),
+              ),
+            ],
             const SizedBox(height: 20),
             const Text(
               'Descripción',
@@ -263,6 +264,7 @@ ScaffoldMessenger.of(context).showSnackBar(
             TextField(
               controller: descripcionController,
               maxLines: 4,
+              enabled: !guardando,
               decoration: const InputDecoration(
                 hintText: 'Contá cómo era o hacia dónde iba...',
                 border: OutlineInputBorder(),
@@ -270,9 +272,19 @@ ScaffoldMessenger.of(context).showSnackBar(
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: guardarAvistamiento,
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('Guardar avistamiento'),
+              onPressed: guardando ? null : guardarAvistamiento,
+              icon: guardando
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.save_outlined),
+              label: Text(
+                guardando ? 'Guardando...' : 'Guardar avistamiento',
+              ),
             ),
           ],
         ),

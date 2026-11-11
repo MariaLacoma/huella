@@ -1,10 +1,6 @@
-
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/app_theme.dart';
-import '../../config/api_config.dart';
 
 class RegistroPage extends StatefulWidget {
   const RegistroPage({super.key});
@@ -18,7 +14,7 @@ class _RegistroPageState extends State<RegistroPage> {
   final telefonoController = TextEditingController();
   final contrasenaController = TextEditingController();
 
- final String urlRegistro = '${ApiConfig.baseUrl}/registro.php';
+
   bool nombreError = false;
   bool emailError = false;
   bool contrasenaError = false;
@@ -233,21 +229,26 @@ class _RegistroPageState extends State<RegistroPage> {
                   }
 
                   try {
-                    print('ESTOY EJECUTANDO EL REGISTRO');
+                   print('ESTOY EJECUTANDO EL REGISTRO');
 
-                    final respuesta = await http.post(
-                      Uri.parse(urlRegistro),
-                      body: {
-                        'nombre': nombreController.text,
-                        'email': emailController.text,
-                        'telefono': telefonoController.text,
-                        'contrasena': contrasenaController.text,
-                      },
-                    );
+debugPrint('ANTES DE SIGNUP');
 
-                    print('RESPUESTA REGISTRO: ${respuesta.body}');
+final respuesta = await Supabase.instance.client.auth.signUp(
+  email: emailController.text.trim(),
+  password: contrasenaController.text,
+  data: {
+    'nombre': nombreController.text.trim(),
+    'telefono': telefonoController.text.trim(),
+  },
+);
 
-                    if (respuesta.body.contains('"ok":true')) {
+debugPrint('DESPUÉS DE SIGNUP');
+debugPrint('USUARIO: ${respuesta.user?.id}');
+debugPrint('SESIÓN: ${respuesta.session != null}');
+
+                    print('RESPUESTA REGISTRO: ${respuesta.user?.id}');
+
+if (respuesta.user != null) {
                       showDialog(
                         context: context,
                         builder: (context) {
@@ -269,7 +270,7 @@ class _RegistroPageState extends State<RegistroPage> {
                                 vertical: 8,
                               ),
                               child: Text(
-                                'Tu cuenta de HUELLA fue creada correctamente.',
+                                'Si el registro fue aceptado, revisá tu correo electrónico para confirmar tu cuenta antes de iniciar sesión.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 16,
@@ -351,6 +352,8 @@ class _RegistroPageState extends State<RegistroPage> {
                       );
                     }
                   } catch (e) {
+                      debugPrint('ERROR AL REGISTRAR EN SUPABASE: $e');
+                      debugPrint('SUPABASE DEVOLVIÓ LA RESPUESTA');
                     showDialog(
                       context: context,
                       builder: (context) {

@@ -1,11 +1,10 @@
-import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../theme/app_theme.dart';
 import '../administrador/panel_administrador_page.dart';
 import '../perfil/perfil_page.dart';
-import '../../config/api_config.dart';
-
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,18 +16,186 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final contrasenaController = TextEditingController();
+
   bool emailError = false;
   bool contrasenaError = false;
   String mensajeEmailError = '';
   bool _ocultarContrasena = true;
-
- final String urlLogin = '${ApiConfig.baseUrl}/login.php';
+  bool _cargando = false;
 
   @override
   void dispose() {
     emailController.dispose();
     contrasenaController.dispose();
     super.dispose();
+  }
+
+  Future<void> _iniciarSesion() async {
+    final email = emailController.text.trim();
+    final contrasena = contrasenaController.text;
+
+    final emailVacio = email.isEmpty;
+    final emailValido =
+        RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+
+    setState(() {
+      emailError = emailVacio || !emailValido;
+      contrasenaError = contrasena.isEmpty;
+
+      if (emailVacio) {
+        mensajeEmailError = 'El correo electrónico es obligatorio';
+      } else if (!emailValido) {
+        mensajeEmailError = 'Formato de correo electrónico inválido';
+      } else {
+        mensajeEmailError = '';
+      }
+    });
+
+    if (emailError || contrasenaError) {
+      _mostrarMensaje(
+        'Faltan datos',
+        'Completá los datos correctamente para continuar.',
+      );
+      return;
+    }
+
+    setState(() {
+      _cargando = true;
+    });
+
+    try {
+      final respuesta =
+          await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: contrasena,
+      );
+
+      final usuarioAuth = respuesta.user;
+
+      if (usuarioAuth == null) {
+        _mostrarMensaje(
+          'Datos incorrectos',
+          'No se pudo iniciar sesión. Verificá tu correo y contraseña.',
+        );
+        return;
+      }
+
+      final usuario = await Supabase.instance.client
+          .from('usuario')
+          .select('id_usuario, nombre, email, telefono, tipo, estado')
+          .eq('auth_user_id', usuarioAuth.id)
+          .maybeSingle();
+
+      if (usuario == null) {
+        await Supabase.instance.client.auth.signOut();
+
+        _mostrarMensaje(
+          'Perfil no encontrado',
+          'La cuenta inició sesión, pero no se encontró su perfil en HUELLA.',
+        );
+        return;
+      }
+
+      if (usuario['estado'] != 'activo') {
+        await Supabase.instance.client.auth.signOut();
+
+        _mostrarMensaje(
+          'Cuenta no disponible',
+          'Tu cuenta no está habilitada para ingresar.',
+        );
+        return;
+      }
+
+      if (!mounted) return;
+
+      final tipo = usuario['tipo'].toString();
+
+      if (tipo == 'administrador') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const PanelAdministrador(),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PerfilPage(
+              idUsuario: usuario['id_usuario'],
+              nombre: usuario['nombre'].toString(),
+              email: usuario['email'].toString(),
+              telefono: usuario['telefono']?.toString() ?? '',
+            ),
+          ),
+        );
+      }
+    } on AuthException catch (e) {
+      if (!mounted) return;
+
+      _mostrarMensaje(
+        'No se pudo iniciar sesión',
+        e.message,
+      );
+    } catch (e) {
+      debugPrint('ERROR LOGIN SUPABASE: $e');
+
+      if (!mounted) return;
+
+      _mostrarMensaje(
+        'Error de conexión',
+        'No se pudo completar el inicio de sesión. Intentá nuevamente.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _cargando = false;
+        });
+      }
+    }
+  }
+
+  void _mostrarMensaje(String titulo, String mensaje) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            titulo,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: titulo == 'Datos incorrectos' ||
+                      titulo == 'Error de conexión' ||
+                      titulo == 'No se pudo iniciar sesión'
+                  ? Colors.red
+                  : AppTheme.verdePrincipal,
+            ),
+          ),
+          content: Text(
+            mensaje,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 16,
+              height: 1.4,
+              color: AppTheme.textoSecundario,
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -42,7 +209,6 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const SizedBox(height: 25),
 
-              // ICONO DE HUELLA
               Center(
                 child: Container(
                   width: 100,
@@ -61,7 +227,6 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 24),
 
-              // TÍTULO
               const Text(
                 'Iniciar sesión',
                 textAlign: TextAlign.center,
@@ -74,16 +239,17 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 8),
 
-              // DESCRIPCIÓN
               const Text(
                 'Ingresá a tu cuenta de HUELLA',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: AppTheme.textoSecundario),
+                style: TextStyle(
+                  fontSize: 15,
+                  color: AppTheme.textoSecundario,
+                ),
               ),
 
               const SizedBox(height: 30),
 
-              // CORREO
               TextField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -96,7 +262,6 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 16),
 
-              // CONTRASEÑA
               TextField(
                 controller: contrasenaController,
                 obscureText: _ocultarContrasena,
@@ -123,223 +288,23 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 25),
 
-              // BOTÓN INICIAR SESIÓN
               ElevatedButton.icon(
-                onPressed: () async {
-                  final email = emailController.text.trim();
-                  final contrasena = contrasenaController.text.trim();
-                  final emailVacio = email.isEmpty;
-                  final emailValido = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
-                      .hasMatch(email);
-
-                  setState(() {
-                    emailError = emailVacio || !emailValido;
-                    contrasenaError = contrasena.isEmpty;
-
-                    if (emailVacio) {
-                      mensajeEmailError =
-                          'El correo electrónico es obligatorio';
-                    } else if (!emailValido) {
-                      mensajeEmailError =
-                          'Formato de correo electrónico inválido';
-                    } else {
-                      mensajeEmailError = '';
-                    }
-                  });
-
-                  if (emailError || contrasenaError) {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          title: const Text(
-                            'Faltan datos',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.verdePrincipal,
-                            ),
-                          ),
-                          content: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            child: Text(
-                              'Completá los datos correctamente para continuar.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,
-                                height: 1.4,
-                                color: AppTheme.textoSecundario,
-                              ),
-                            ),
-                          ),
-                          actionsAlignment: MainAxisAlignment.center,
-                          actionsPadding: const EdgeInsets.only(
-                            left: 20,
-                            right: 20,
-                            bottom: 20,
-                          ),
-                          actions: [
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Aceptar'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                    return;
-                  }
-
-                  try {
-                    final respuesta = await http.post(
-                      Uri.parse(urlLogin),
-                      body: {
-                        'email': emailController.text,
-                        'contrasena': contrasenaController.text,
-                      },
-                    );
-
-                    print('RESPUESTA REGISTRO: ${respuesta.body}');
-                    print(respuesta.body);
-
-                    if (respuesta.body.contains('"ok":true')) {
-                      final datos = jsonDecode(respuesta.body);
-                      final usuario = datos['usuario'];
-                      final tipo = usuario['tipo'].toString();
-
-                      if (tipo == 'administrador') {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PanelAdministrador(),
-                          ),
-                        );
-                      } else {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PerfilPage(
-                              idUsuario: usuario['id_usuario'],
-                              nombre: usuario['nombre'].toString(),
-                              email: usuario['email'].toString(),
-                              telefono: usuario['telefono'].toString(),
-                            ),
-                          ),
-                        );
-                      }
-                    } else {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          return AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            title: const Text(
-                              'Datos incorrectos',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red,
-                              ),
-                            ),
-                            content: const Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              child: Text(
-                                'El correo electrónico o la contraseña no son correctos.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  height: 1.4,
-                                  color: AppTheme.textoSecundario,
-                                ),
-                              ),
-                            ),
-                            actionsAlignment: MainAxisAlignment.center,
-                            actionsPadding: const EdgeInsets.only(
-                              left: 20,
-                              right: 20,
-                              bottom: 20,
-                            ),
-                            actions: [
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('Aceptar'),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    }
-                  } catch (e) {
-                    print(e);
-
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          title: const Text(
-                            'Error de conexión',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                            ),
-                          ),
-                          content: const Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            child: Text(
-                              'No se pudo conectar con el servidor. Verificá la conexión e intentá nuevamente.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,
-                                height: 1.4,
-                                color: AppTheme.textoSecundario,
-                              ),
-                            ),
-                          ),
-                          actionsAlignment: MainAxisAlignment.center,
-                          actionsPadding: const EdgeInsets.only(
-                            left: 20,
-                            right: 20,
-                            bottom: 20,
-                          ),
-                          actions: [
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Aceptar'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
-                  }
-                },
-                icon: const Icon(Icons.login),
-                label: const Text(
-                  'Iniciar sesión',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                onPressed: _cargando ? null : _iniciarSesion,
+                icon: _cargando
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.login),
+                label: Text(
+                  _cargando ? 'Ingresando...' : 'Iniciar sesión',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
 

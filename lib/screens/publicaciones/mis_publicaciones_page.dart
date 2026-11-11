@@ -1,11 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../config/api_config.dart';
 import '../../theme/app_theme.dart';
-
 import 'detalle_publicacion_page.dart';
 
 class MisPublicacionesPage extends StatefulWidget {
@@ -18,7 +14,7 @@ class MisPublicacionesPage extends StatefulWidget {
 }
 
 class _MisPublicacionesPageState extends State<MisPublicacionesPage> {
-  List<dynamic> publicaciones = [];
+  List<Map<String, dynamic>> publicaciones = [];
   bool cargando = true;
   String? error;
 
@@ -29,44 +25,83 @@ class _MisPublicacionesPageState extends State<MisPublicacionesPage> {
   }
 
   Future<void> cargarPublicaciones() async {
+    if (!mounted) return;
+
     setState(() {
       cargando = true;
       error = null;
     });
 
     try {
-      final uri = Uri.parse(
-        '${ApiConfig.baseUrl}/mis_publicaciones.php',
-      ).replace(queryParameters: {'id_usuario': widget.idUsuario.toString()});
+      final cliente = Supabase.instance.client;
+      final usuarioAuth = cliente.auth.currentUser;
 
-      final respuesta = await http.get(uri);
-
-      if (respuesta.statusCode != 200) {
-        throw Exception('Error al consultar las publicaciones.');
+      if (usuarioAuth == null) {
+        throw Exception('Debés iniciar sesión para ver tus publicaciones.');
       }
 
-      final datos = jsonDecode(respuesta.body) as Map<String, dynamic>;
+      // Obtener el ID interno del usuario autenticado.
+      final perfil = await cliente
+          .from('usuario')
+          .select('id_usuario, estado')
+          .eq('auth_user_id', usuarioAuth.id)
+          .maybeSingle();
 
-      if (datos['ok'] != true) {
-        throw Exception(
-          datos['mensaje'] ?? 'No se pudieron cargar las publicaciones.',
-        );
+      if (perfil == null) {
+        throw Exception('No se encontró tu perfil de usuario.');
       }
+
+      if (perfil['estado'] != 'activo') {
+        throw Exception('Tu cuenta no está habilitada.');
+      }
+
+      final idUsuarioReal = perfil['id_usuario'] as int;
+
+      // Consultar las publicaciones de este usuario.
+      final resultado = await cliente
+          .from('publicacion')
+          .select()
+          .eq('id_usuario', idUsuarioReal)
+          .order('fecha_creacion', ascending: false);
 
       if (!mounted) return;
 
       setState(() {
-        publicaciones = datos['publicaciones'] as List<dynamic>;
+        publicaciones = resultado
+            .map((fila) => Map<String, dynamic>.from(fila))
+            .toList();
         cargando = false;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        error = 'No se pudieron cargar las publicaciones.';
+        error = 'No se pudieron cargar las publicaciones.\n$e';
         cargando = false;
       });
     }
+  }
+
+  String obtenerUrlFoto(dynamic foto) {
+    if (foto == null || foto.toString().trim().isEmpty) {
+      return '';
+    }
+
+    String ruta = foto.toString().trim();
+
+    if (ruta.startsWith('https://') || ruta.startsWith('http://')) {
+      return ruta;
+    }
+
+    // Quitar el nombre del bucket si ya está incluido.
+    const prefijo = 'fotos-mascotas/';
+    if (ruta.startsWith(prefijo)) {
+      ruta = ruta.substring(prefijo.length);
+    }
+
+    return Supabase.instance.client.storage
+        .from('fotos-mascotas')
+        .getPublicUrl(ruta);
   }
 
   @override
@@ -81,39 +116,55 @@ class _MisPublicacionesPageState extends State<MisPublicacionesPage> {
           ? const Center(child: CircularProgressIndicator())
           : error != null
           ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(error!),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: cargarPublicaciones,
-                    child: const Text('Reintentar'),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 42,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: cargarPublicaciones,
+                      child: const Text('Reintentar'),
+                    ),
+                  ],
+                ),
               ),
             )
           : publicaciones.isEmpty
-          ? const Center(child: Text('Todavía no tenés publicaciones.'))
+          ? RefreshIndicator(
+              onRefresh: cargarPublicaciones,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: const [
+                  SizedBox(height: 180),
+                  Center(child: Text('Todavía no tenés publicaciones.')),
+                ],
+              ),
+            )
           : RefreshIndicator(
               onRefresh: cargarPublicaciones,
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: publicaciones.length,
                 itemBuilder: (context, index) {
-                  final publicacion =
-                      publicaciones[index] as Map<String, dynamic>;
+                  final publicacion = publicaciones[index];
 
                   final nombre = publicacion['nombre']?.toString() ?? '';
-
                   final especie = publicacion['especie']?.toString() ?? '';
-
                   final tipo =
                       publicacion['tipo']?.toString().toLowerCase() ?? '';
                   final estado =
                       publicacion['estado']?.toString().toLowerCase() ?? '';
 
                   final String tipoVisible;
+
                   if (tipo == 'perdida') {
                     tipoVisible = 'Mascota perdida';
                   } else if (tipo == 'encontrada') {
@@ -123,7 +174,10 @@ class _MisPublicacionesPageState extends State<MisPublicacionesPage> {
                   }
 
                   final String estadoVisible;
-                  if (estado == 'encontrada' && tipo == 'perdida') {
+
+                  if (estado == 'eliminada') {
+                    estadoVisible = 'Retirada por el administrador';
+                  } else if (estado == 'encontrada' && tipo == 'perdida') {
                     estadoVisible = '¡La mascota fue encontrada!';
                   } else if (estado == 'encontrada' && tipo == 'encontrada') {
                     estadoVisible = '¡La mascota volvió con su familia!';
@@ -135,36 +189,49 @@ class _MisPublicacionesPageState extends State<MisPublicacionesPage> {
                     estadoVisible = publicacion['estado']?.toString() ?? '';
                   }
 
+                  final urlFoto = obtenerUrlFoto(publicacion['foto']);
+                  print('Ruta guardada: ${publicacion['foto']}');
+                  print('URL generada: $urlFoto');
+
                   return Card(
                     margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
                       leading: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          '${ApiConfig.baseUrl}/${publicacion['foto']}',
-                          width: 75,
-                          height: 75,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 75,
-                              height: 75,
-                              color: AppTheme.verdeClaro,
-                              child: const Icon(
-                                Icons.image_not_supported_outlined,
-                                color: AppTheme.verdePrincipal,
+                        child: urlFoto.isEmpty
+                            ? Container(
+                                width: 75,
+                                height: 75,
+                                color: AppTheme.verdeClaro,
+                                child: const Icon(
+                                  Icons.image_not_supported_outlined,
+                                  color: AppTheme.verdePrincipal,
+                                ),
+                              )
+                            : Image.network(
+                                urlFoto,
+                                width: 75,
+                                height: 75,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 75,
+                                    height: 75,
+                                    color: AppTheme.verdeClaro,
+                                    child: const Icon(
+                                      Icons.image_not_supported_outlined,
+                                      color: AppTheme.verdePrincipal,
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
                       ),
-
                       title: Text(
                         nombre.isEmpty ? especie : nombre,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                     subtitle: Text('$tipoVisible\n$estadoVisible'),
-
+                      subtitle: Text('$tipoVisible\n$estadoVisible'),
+                      isThreeLine: true,
                       onTap: () async {
                         final resultado = await Navigator.push<bool>(
                           context,

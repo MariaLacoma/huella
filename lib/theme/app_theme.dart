@@ -24,15 +24,23 @@ class AppTheme {
     useMaterial3: true,
 
     scaffoldBackgroundColor: fondo,
-
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: verdePrincipal,
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: verdeOscuro,
+      contentTextStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 2,
     ),
+
+    colorScheme: ColorScheme.fromSeed(seedColor: verdePrincipal),
 
     // =========================
     // APP BAR
     // =========================
-
     appBarTheme: const AppBarTheme(
       backgroundColor: verdePrincipal,
       foregroundColor: Colors.white,
@@ -43,7 +51,6 @@ class AppTheme {
     // =========================
     // TEXTOS
     // =========================
-
     textTheme: const TextTheme(
       headlineMedium: TextStyle(
         fontSize: 28,
@@ -57,29 +64,19 @@ class AppTheme {
         color: textoPrincipal,
       ),
 
-      bodyLarge: TextStyle(
-        fontSize: 16,
-        color: textoPrincipal,
-      ),
+      bodyLarge: TextStyle(fontSize: 16, color: textoPrincipal),
 
-      bodyMedium: TextStyle(
-        fontSize: 15,
-        color: textoSecundario,
-      ),
+      bodyMedium: TextStyle(fontSize: 15, color: textoSecundario),
     ),
 
     // =========================
     // CAMPOS DE TEXTO
     // =========================
-
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: Colors.white,
 
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 16,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
 
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -93,31 +90,20 @@ class AppTheme {
 
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: verdePrincipal,
-          width: 2,
-        ),
+        borderSide: const BorderSide(color: verdePrincipal, width: 2),
       ),
 
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: error,
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: error, width: 1.5),
       ),
 
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: error,
-          width: 2,
-        ),
+        borderSide: const BorderSide(color: error, width: 2),
       ),
 
-      labelStyle: const TextStyle(
-        color: textoSecundario,
-      ),
+      labelStyle: const TextStyle(color: textoSecundario),
 
       prefixIconColor: verdePrincipal,
     ),
@@ -125,92 +111,57 @@ class AppTheme {
     // =========================
     // BOTONES PRINCIPALES
     // =========================
-
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: verdePrincipal,
         foregroundColor: Colors.white,
 
-        minimumSize: const Size(
-          double.infinity,
-          52,
-        ),
+        minimumSize: const Size(double.infinity, 52),
 
-        padding: const EdgeInsets.symmetric(
-          vertical: 14,
-          horizontal: 20,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
 
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
 
         elevation: 0,
 
-        textStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     ),
 
     // =========================
     // BOTONES SECUNDARIOS
     // =========================
-
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: verdePrincipal,
 
-        minimumSize: const Size(
-          double.infinity,
-          52,
-        ),
+        minimumSize: const Size(double.infinity, 52),
 
-        padding: const EdgeInsets.symmetric(
-          vertical: 14,
-          horizontal: 20,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
 
-        side: const BorderSide(
-          color: verdePrincipal,
-          width: 1.5,
-        ),
+        side: const BorderSide(color: verdePrincipal, width: 1.5),
 
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
 
-        textStyle: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     ),
 
     // =========================
     // TARJETAS
     // =========================
-
     cardTheme: CardThemeData(
       color: Colors.white,
       elevation: 2,
 
-      margin: const EdgeInsets.symmetric(
-        vertical: 6,
-      ),
+      margin: const EdgeInsets.symmetric(vertical: 6),
 
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
     ),
 
     // =========================
     // ICONOS
     // =========================
-
-    iconTheme: const IconThemeData(
-      color: verdePrincipal,
-    ),
+    iconTheme: const IconThemeData(color: verdePrincipal),
   );
 }
