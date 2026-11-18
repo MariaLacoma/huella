@@ -6,13 +6,18 @@ import 'detalle_publicacion_page.dart';
 
 class MisPublicacionesPage extends StatefulWidget {
   final int idUsuario;
+  final VoidCallback onVolverInicio;
 
-  const MisPublicacionesPage({super.key, required this.idUsuario});
+  const MisPublicacionesPage({
+    super.key,
+    required this.idUsuario,
+    required this.onVolverInicio,
+  });
 
   @override
-  State<MisPublicacionesPage> createState() => _MisPublicacionesPageState();
+  State<MisPublicacionesPage> createState() =>
+      _MisPublicacionesPageState();
 }
-
 class _MisPublicacionesPageState extends State<MisPublicacionesPage> {
   List<Map<String, dynamic>> publicaciones = [];
   bool cargando = true;
@@ -193,62 +198,134 @@ class _MisPublicacionesPageState extends State<MisPublicacionesPage> {
                   print('Ruta guardada: ${publicacion['foto']}');
                   print('URL generada: $urlFoto');
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ListTile(
-                      leading: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: urlFoto.isEmpty
-                            ? Container(
-                                width: 75,
-                                height: 75,
-                                color: AppTheme.verdeClaro,
-                                child: const Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: AppTheme.verdePrincipal,
-                                ),
-                              )
-                            : Image.network(
-                                urlFoto,
-                                width: 75,
-                                height: 75,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: 75,
-                                    height: 75,
-                                    color: AppTheme.verdeClaro,
-                                    child: const Icon(
-                                      Icons.image_not_supported_outlined,
-                                      color: AppTheme.verdePrincipal,
-                                    ),
-                                  );
-                                },
-                              ),
-                      ),
-                      title: Text(
-                        nombre.isEmpty ? especie : nombre,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text('$tipoVisible\n$estadoVisible'),
-                      isThreeLine: true,
-                      onTap: () async {
-                        final resultado = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DetallePublicacionPage(
-                              publicacion: publicacion,
-                              idUsuario: widget.idUsuario,
-                            ),
-                          ),
-                        );
+               return Card(
+  margin: const EdgeInsets.only(bottom: 16),
+  elevation: 2,
+  color: Colors.white,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(18),
+  ),
+  clipBehavior: Clip.antiAlias,
+  child: InkWell(
+    onTap: () async {
+      final resultado = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DetallePublicacionPage(
+            publicacion: publicacion,
+            idUsuario: widget.idUsuario,
+            tipoUsuario: 'usuario',
+          ),
+        ),
+      );
 
-                        if (resultado == true && mounted) {
-                          await cargarPublicaciones();
-                        }
-                      },
+      if (resultado == true && mounted) {
+        await cargarPublicaciones();
+      }
+    },
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: urlFoto.isEmpty
+                ? Container(
+                    width: 105,
+                    height: 105,
+                    color: AppTheme.verdeClaro,
+                    child: const Icon(
+                      Icons.pets,
+                      size: 38,
+                      color: AppTheme.verdePrincipal,
                     ),
-                  );
+                  )
+                : Image.network(
+                    urlFoto,
+                    width: 105,
+                    height: 105,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 105,
+                        height: 105,
+                        color: AppTheme.verdeClaro,
+                        child: const Icon(
+                          Icons.image_not_supported_outlined,
+                          size: 35,
+                          color: AppTheme.verdePrincipal,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  nombre.isEmpty ? especie : nombre,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textoPrincipal,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  tipoVisible,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.textoSecundario,
+                  ),
+                ),
+                const SizedBox(height: 9),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: estado == 'activa'
+                        ? AppTheme.verdeClaro
+                        : estado == 'eliminada'
+                            ? Colors.red.shade50
+                            : Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    estadoVisible,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: estado == 'activa'
+                          ? AppTheme.verdeOscuro
+                          : estado == 'eliminada'
+                              ? Colors.red.shade700
+                              : Colors.blue.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Icon(
+            Icons.chevron_right,
+            color: AppTheme.textoSecundario,
+          ),
+        ],
+      ),
+    ),
+  ),
+);
                 },
               ),
             ),

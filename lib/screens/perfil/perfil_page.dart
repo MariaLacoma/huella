@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 import 'mi_cuenta_page.dart';
-import '../inicio/inicio_page.dart';
 import '../publicaciones/buscar_mascotas_page.dart';
 import '../publicaciones/crear_publicacion_page.dart';
 import '../publicaciones/mis_publicaciones_page.dart';
 
-class PerfilPage extends StatelessWidget {
+class PerfilPage extends StatefulWidget {
   final int idUsuario;
   final String nombre;
   final String email;
@@ -22,71 +21,303 @@ class PerfilPage extends StatelessWidget {
     required this.telefono,
   });
 
-  void _abrirMiCuenta(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MiCuentaPage(
-          idUsuario: idUsuario,
-          nombre: nombre,
-          email: email,
-          telefono: telefono,
+  @override
+  State<PerfilPage> createState() => _PerfilPageState();
+}
+
+class _PerfilPageState extends State<PerfilPage> {
+  int indiceActual = 0;
+  int _actualizacionPublicaciones = 0;
+
+
+ @override
+Widget build(BuildContext context) {
+  return PopScope(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, result) {
+      if (indiceActual != 0) {
+        setState(() {
+          indiceActual = 0;
+        });
+      }
+    },
+    child: Scaffold(
+      backgroundColor: AppTheme.fondo,
+      body: IndexedStack(
+        index: indiceActual,
+       children: [
+  _construirInicio(),
+
+  BuscarMascotasPage(
+      key: ValueKey(_actualizacionPublicaciones),
+    idUsuario: widget.idUsuario,
+    onVolverInicio: () {
+      setState(() {
+        indiceActual = 0;
+      });
+    },
+  ),
+
+  MisPublicacionesPage(
+      key: ValueKey(_actualizacionPublicaciones),
+    idUsuario: widget.idUsuario,
+    onVolverInicio: () {
+      setState(() {
+        indiceActual = 0;
+      });
+    },
+  ),
+
+  MiCuentaPage(
+    idUsuario: widget.idUsuario,
+    nombre: widget.nombre,
+    email: widget.email,
+    telefono: widget.telefono,
+  ),
+],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: indiceActual,
+        onTap: (indice) {
+          setState(() {
+            indiceActual = indice;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: AppTheme.verdePrincipal,
+        unselectedItemColor: AppTheme.textoSecundario,
+        backgroundColor: Colors.white,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: 'Buscar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list_alt),
+            label: 'Mis publicaciones',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Mi cuenta',
+          ),
+        ],
+      ),
+    ),
+  );
+}
+ 
+
+Widget _construirInicio() {
+  return Scaffold(
+    backgroundColor: AppTheme.fondo,
+    appBar: AppBar(
+      title: const Text(
+        'HUELLA',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      backgroundColor: AppTheme.fondo,
+      foregroundColor: AppTheme.textoPrincipal,
+      elevation: 0,
+    ),
+    body: SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 12),
+
+            Text(
+              '¡Hola, ${widget.nombre}!',
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textoPrincipal,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            const Text(
+              'Estamos para ayudar a reunir mascotas con sus familias.',
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.4,
+                color: AppTheme.textoSecundario,
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ILUSTRACIÓN DE MASCOTAS
+            Container(
+              height: 230,
+              decoration: BoxDecoration(
+                color: AppTheme.verdeClaro,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned(
+                    top: 18,
+                    right: 25,
+                    child: Icon(
+                      Icons.favorite,
+                      size: 35,
+                      color: AppTheme.verdePrincipal.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 20,
+                    left: 25,
+                    child: Icon(
+                      Icons.pets,
+                      size: 42,
+                      color: AppTheme.verdePrincipal.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.pets,
+                        size: 105,
+                        color: AppTheme.verdePrincipal,
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        'Cada mascota merece volver a casa',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.verdeOscuro,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // NUEVA PUBLICACIÓN
+            Material(
+              color: AppTheme.verdePrincipal,
+              borderRadius: BorderRadius.circular(20),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+               onTap: () async {
+  final resultado = await Navigator.push<bool>(
+    context,
+    MaterialPageRoute(
+      builder: (context) => CrearPublicacionPage(
+        idUsuario: widget.idUsuario,
+      ),
+    ),
+  );
+
+  if (resultado == true) {
+setState(() {
+  _actualizacionPublicaciones++;
+});
+  }
+},
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.add_a_photo_outlined,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
+
+                      const SizedBox(width: 16),
+
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Nueva publicación',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Publicá una mascota perdida o encontrada',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const Icon(
+                        Icons.chevron_right,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  void _cerrarSesion(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            'Cerrar sesión',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textoPrincipal,
-            ),
-          ),
-          content: const Text(
-            '¿Querés cerrar tu sesión de HUELLA?',
-            style: TextStyle(
-              fontSize: 16,
+Widget _elementoInformativo(String texto) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(
+          Icons.check_circle_outline,
+          color: AppTheme.verdePrincipal,
+          size: 20,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            texto,
+            style: const TextStyle(
+              fontSize: 14,
               color: AppTheme.textoSecundario,
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const InicioPage(),
-                  ),
-                  (route) => false,
-                );
-              },
-              child: const Text('Cerrar sesión'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _opcionPrincipal({
-    required BuildContext context,
     required IconData icono,
     required String titulo,
     required String descripcion,
@@ -139,147 +370,6 @@ class PerfilPage extends StatelessWidget {
               const Icon(
                 Icons.chevron_right,
                 color: AppTheme.textoSecundario,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.fondo,
-      appBar: AppBar(
-  title: const Text('HUELLA'),
-  backgroundColor: AppTheme.fondo,
-  foregroundColor: AppTheme.textoPrincipal,
-  elevation: 0,
-  actions: [
-    PopupMenuButton<String>(
-      tooltip: 'Mi cuenta',
-      icon: const Icon(
-  Icons.account_circle_outlined,
-  size: 32,
-),
-      onSelected: (opcion) {
-        if (opcion == 'cuenta') {
-          _abrirMiCuenta(context);
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem<String>(
-          value: 'cuenta',
-          child: Row(
-            children: [
-              Icon(
-                Icons.person_outline,
-                color: AppTheme.verdePrincipal,
-              ),
-              SizedBox(width: 10),
-              Text('Mi cuenta'),
-            ],
-          ),
-        ),
-      ],
-    ),
-  ],
-),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 12),
-
-              Text(
-                '¡Hola, $nombre!',
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textoPrincipal,
-                ),
-              ),
-
-              const SizedBox(height: 8),
-
-              const Text(
-                '¿Qué querés hacer hoy?',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppTheme.textoSecundario,
-                ),
-              ),
-
-              const SizedBox(height: 28),
-
-              _opcionPrincipal(
-                context: context,
-                icono: Icons.search,
-                titulo: 'Buscar mascotas',
-                descripcion: 'Consultá las publicaciones de mascotas',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => BuscarMascotasPage(
-                        idUsuario: idUsuario,
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 12),
-
-              _opcionPrincipal(
-                context: context,
-                icono: Icons.add_a_photo_outlined,
-                titulo: 'Nueva publicación',
-                descripcion: 'Publicá una mascota perdida o encontrada',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CrearPublicacionPage(
-                        idUsuario: idUsuario,
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 12),
-
-              _opcionPrincipal(
-                context: context,
-                icono: Icons.list_alt,
-                titulo: 'Mis publicaciones',
-                descripcion: 'Consultá y administrá tus publicaciones',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MisPublicacionesPage(
-                        idUsuario: idUsuario,
-                      ),
-                    ),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 12),
-
-             
-
-         
-
-              OutlinedButton.icon(
-                onPressed: () => _cerrarSesion(context),
-                icon: const Icon(Icons.logout),
-                label: const Text('Cerrar sesión'),
               ),
             ],
           ),

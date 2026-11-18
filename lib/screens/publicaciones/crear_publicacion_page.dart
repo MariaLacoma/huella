@@ -357,7 +357,7 @@ if (razaSeleccionada == 'Raza conocida' &&
         'Publicación creada correctamente.',
       );
 
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } on StorageException catch (e) {
       debugPrint('ERROR AL SUBIR FOTO: ${e.message}');
 

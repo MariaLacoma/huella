@@ -116,19 +116,23 @@ class InicioPage extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              // BUSCAR
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const BuscarMascotasPage(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.search),
-                label: const Text('Buscar mascotas'),
-              ),
+            // BUSCAR
+ElevatedButton.icon(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BuscarMascotasPage(
+          onVolverInicio: () {
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
+  },
+  icon: const Icon(Icons.search),
+  label: const Text('Buscar mascotas'),
+),
 
               const SizedBox(height: 14),
 

@@ -46,3 +46,15 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Dependencias de Node
+node_modules/
+
+# Archivos privados de Supabase
+supabase/.temp/
+supabase/.branches/
+supabase/functions/.env
+supabase/functions/**/.env
+
+# Configuración local de VS Code
+.vscode/

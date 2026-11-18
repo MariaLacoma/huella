@@ -1,8 +1,8 @@
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../theme/app_theme.dart';
-
 import '../publicaciones/detalle_publicacion_page.dart';
 
 class ReportesAdministradorPage extends StatefulWidget {
@@ -13,7 +13,8 @@ class ReportesAdministradorPage extends StatefulWidget {
       _ReportesAdministradorPageState();
 }
 
-class _ReportesAdministradorPageState extends State<ReportesAdministradorPage> {
+class _ReportesAdministradorPageState
+    extends State<ReportesAdministradorPage> {
   final supabase = Supabase.instance.client;
 
   List<Map<String, dynamic>> reportes = [];
@@ -26,46 +27,46 @@ class _ReportesAdministradorPageState extends State<ReportesAdministradorPage> {
     cargarReportes();
   }
 
- Future<void> cargarReportes() async {
-  if (!mounted) return;
-
-  setState(() {
-    cargando = true;
-    error = null;
-  });
-
-  try {
-    final resultado = await supabase
-        .from('reporte')
-        .select('*, publicacion(estado)')
-        .order('fecha_creacion', ascending: false);
-
+  Future<void> cargarReportes() async {
     if (!mounted) return;
 
     setState(() {
-      reportes = List<Map<String, dynamic>>.from(resultado);
-      cargando = false;
+      cargando = true;
+      error = null;
     });
-  } on PostgrestException catch (e) {
-    debugPrint('Error de Supabase: ${e.message}');
 
-    if (!mounted) return;
+    try {
+      final resultado = await supabase
+          .from('reporte')
+          .select('*, publicacion(estado)')
+          .order('fecha_creacion', ascending: false);
 
-    setState(() {
-      cargando = false;
-      error =
-          'No se pudieron consultar los reportes. '
-          'Verificá los permisos en Supabase.';
-    });
-  } catch (e) {
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      cargando = false;
-      error = e.toString();
-    });
+      setState(() {
+        reportes = List<Map<String, dynamic>>.from(resultado);
+        cargando = false;
+      });
+    } on PostgrestException catch (e) {
+      debugPrint('Error de Supabase: ${e.message}');
+
+      if (!mounted) return;
+
+      setState(() {
+        cargando = false;
+        error =
+            'No se pudieron consultar los reportes. '
+            'Verificá los permisos en Supabase.';
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        cargando = false;
+        error = e.toString();
+      });
+    }
   }
-}
 
   Future<void> verPublicacion(int idPublicacion) async {
     try {
@@ -96,24 +97,24 @@ class _ReportesAdministradorPageState extends State<ReportesAdministradorPage> {
       if (!mounted) return;
 
       if (resultado == null) {
-       ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(
-    backgroundColor: AppTheme.verdeClaro,
-    behavior: SnackBarBehavior.floating,
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-    ),
-    content: const Text(
-      'La publicación ya no existe.',
-      style: TextStyle(
-        color: AppTheme.verdeOscuro,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
-    ),
-  ),
-);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFFFCEBEA),
+            behavior: SnackBarBehavior.floating,
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            content: const Text(
+              'La publicación ya no existe.',
+              style: TextStyle(
+                color: AppTheme.error,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        );
         return;
       }
 
@@ -127,27 +128,31 @@ class _ReportesAdministradorPageState extends State<ReportesAdministradorPage> {
           ),
         ),
       );
+
+      if (mounted) {
+        await cargarReportes();
+      }
     } catch (e) {
       if (!mounted) return;
 
-   ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(
-    backgroundColor: const Color(0xFFFCEBEA),
-    behavior: SnackBarBehavior.floating,
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-    ),
-    content: Text(
-      'No se pudo abrir la publicación: $e',
-      style: const TextStyle(
-        color: AppTheme.error,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
-    ),
-  ),
-);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFFCEBEA),
+          behavior: SnackBarBehavior.floating,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          content: Text(
+            'No se pudo abrir la publicación: $e',
+            style: const TextStyle(
+              color: AppTheme.error,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
     }
   }
 
@@ -172,48 +177,48 @@ class _ReportesAdministradorPageState extends State<ReportesAdministradorPage> {
 
       if (!mounted) return;
 
-   ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(
-    backgroundColor: AppTheme.verdeClaro,
-    behavior: SnackBarBehavior.floating,
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-    ),
-    content: const Text(
-      'Publicación retirada y reporte marcado como revisado.',
-      style: TextStyle(
-        color: AppTheme.verdeOscuro,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
-    ),
-  ),
-);
-} catch (e) {
-  if (!mounted) return;
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      backgroundColor: const Color(0xFFFCEBEA),
-      behavior: SnackBarBehavior.floating,
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      content: Text(
-        'No se pudo completar la operación: $e',
-        style: const TextStyle(
-          color: AppTheme.error,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppTheme.verdeClaro,
+          behavior: SnackBarBehavior.floating,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          content: const Text(
+            'Publicación retirada y reporte marcado como revisado.',
+            style: TextStyle(
+              color: AppTheme.verdeOscuro,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
+    } catch (e) {
+      if (!mounted) return;
 
-  debugPrint('Error al retirar publicación desde reporte: $e');
-}
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFFCEBEA),
+          behavior: SnackBarBehavior.floating,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          content: Text(
+            'No se pudo completar la operación: $e',
+            style: const TextStyle(
+              color: AppTheme.error,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+
+      debugPrint('Error al retirar publicación desde reporte: $e');
+    }
   }
 
   Future<void> marcarComoRevisado(int idReporte) async {
@@ -231,49 +236,49 @@ class _ReportesAdministradorPageState extends State<ReportesAdministradorPage> {
 
       if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(
-    backgroundColor: AppTheme.verdeClaro,
-    behavior: SnackBarBehavior.floating,
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(14),
-    ),
-    content: const Text(
-      'Reporte marcado como revisado.',
-      style: TextStyle(
-        color: AppTheme.verdeOscuro,
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-      ),
-    ),
-  ),
-);
-} catch (e) {
-  if (!mounted) return;
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      backgroundColor: const Color(0xFFFCEBEA),
-      behavior: SnackBarBehavior.floating,
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-      content: Text(
-        'No se pudo actualizar el reporte: $e',
-        style: const TextStyle(
-          color: AppTheme.error,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppTheme.verdeClaro,
+          behavior: SnackBarBehavior.floating,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          content: const Text(
+            'Reporte marcado como revisado.',
+            style: TextStyle(
+              color: AppTheme.verdeOscuro,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
+    } catch (e) {
+      if (!mounted) return;
 
-  debugPrint('Error al actualizar reporte: $e');
-}
-}  
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: const Color(0xFFFCEBEA),
+          behavior: SnackBarBehavior.floating,
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          content: Text(
+            'No se pudo actualizar el reporte: $e',
+            style: const TextStyle(
+              color: AppTheme.error,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      );
+
+      debugPrint('Error al actualizar reporte: $e');
+    }
+  }
 
   String formatearFecha(dynamic fecha) {
     if (fecha == null) return 'Sin fecha';
@@ -287,113 +292,121 @@ class _ReportesAdministradorPageState extends State<ReportesAdministradorPage> {
         '${fechaConvertida.year}';
   }
 
+  Widget construirDato(String titulo, String valor) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppTheme.textoSecundario,
+          ),
+          children: [
+            TextSpan(
+              text: '$titulo: ',
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textoPrincipal,
+              ),
+            ),
+            TextSpan(text: valor),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Volver'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: 80,
-                height: 80,
-                decoration: const BoxDecoration(
-                  color: AppTheme.verdeClaro,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.flag,
-                  size: 45,
-                  color: AppTheme.verdePrincipal,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Reportes recibidos',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textoPrincipal,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Reportes realizados por los usuarios de HUELLA',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: AppTheme.textoSecundario),
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: cargando
-                    ? const Center(child: CircularProgressIndicator())
-                    : error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 42,
-                              color: Colors.red,
+      appBar: AppBar(
+        title: const Text('Reportes recibidos'),
+        centerTitle: true,
+      ),
+      body: cargando
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 42,
+                          color: AppTheme.error,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppTheme.textoSecundario,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: cargarReportes,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: cargarReportes,
+                  child: reportes.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(24),
+                          children: const [
+                            SizedBox(height: 120),
+                            Icon(
+                              Icons.flag_outlined,
+                              size: 60,
+                              color: AppTheme.verdePrincipal,
                             ),
-                            const SizedBox(height: 12),
-                            Text(error!, textAlign: TextAlign.center),
-                            const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              onPressed: cargarReportes,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Reintentar'),
+                            SizedBox(height: 16),
+                            Text(
+                              'Todavía no hay reportes recibidos.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: AppTheme.textoSecundario,
+                              ),
                             ),
                           ],
-                        ),
-                      )
-                    : reportes.isEmpty
-                    ? const Center(
-                        child: Text('Todavía no hay reportes recibidos.'),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: cargarReportes,
-                        child: ListView.builder(
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(16),
                           itemCount: reportes.length,
                           itemBuilder: (context, index) {
                             final reporte = reportes[index];
-                            final estadoPublicacion =
-    reporte['publicacion']?['estado']?.toString();
-
-final publicacionRetirada = estadoPublicacion == 'eliminada';
-debugPrint('Estado: $estadoPublicacion');
-debugPrint('¿Está retirada?: $publicacionRetirada');
-                            debugPrint('Estado de publicación: ${reporte['publicacion']}');
 
                             final motivo =
-                                reporte['motivo']?.toString() ?? 'Sin motivo';
+                                reporte['motivo']?.toString() ??
+                                    'Sin motivo';
 
                             final descripcion =
                                 reporte['descripcion']?.toString() ??
-                                'Sin descripción';
+                                    'Sin descripción';
 
                             final estado =
-                                reporte['estado']?.toString() ?? 'pendiente';
+                                reporte['estado']?.toString() ??
+                                    'pendiente';
 
                             final idUsuario =
                                 reporte['id_usuario']?.toString() ??
-                                'No disponible';
+                                    'No disponible';
 
                             final idPublicacion =
                                 reporte['id_publicacion']?.toString() ??
-                                'No disponible';
+                                    'No disponible';
 
                             final idReporte = int.tryParse(
                               reporte['id_reporte'].toString(),
@@ -401,76 +414,137 @@ debugPrint('¿Está retirada?: $publicacionRetirada');
 
                             final revisado = estado == 'revisado';
 
+                            final publicacionRelacion =
+                                reporte['publicacion'];
+
+                            final estadoPublicacion =
+                                publicacionRelacion is Map
+                                    ? publicacionRelacion['estado']
+                                        ?.toString()
+                                    : null;
+
+                            final publicacionRetirada =
+                                estadoPublicacion == 'eliminada';
+
+                            final idPublicacionNumero =
+                                int.tryParse(idPublicacion);
+
                             return Card(
+                              elevation: 1,
                               margin: const EdgeInsets.only(bottom: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: const BorderSide(
+                                  color: AppTheme.verdeClaro,
+                                ),
+                              ),
                               child: Padding(
-                                padding: const EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(14),
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
                                         Icon(
-                                          revisado
-                                              ? Icons.check_circle
-                                              : Icons.pending_actions,
-                                          color: revisado
-                                              ? Colors.green
-                                              : Colors.orange,
+                                          Icons.flag_outlined,
+                                          size: 22,
+                                          color: AppTheme.verdePrincipal,
                                         ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             'Reporte #${reporte['id_reporte']}',
                                             style: const TextStyle(
+                                              fontSize: 15,
                                               fontWeight: FontWeight.bold,
                                               color: AppTheme.textoPrincipal,
                                             ),
                                           ),
                                         ),
-                                        Text(
-                                          revisado ? 'Revisado' : 'Pendiente',
-                                          style: TextStyle(
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 9,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
                                             color: revisado
-                                                ? Colors.green
-                                                : Colors.orange,
-                                            fontWeight: FontWeight.bold,
+                                                ? AppTheme.verdeClaro
+                                                : const Color(0xFFFFF3E0),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                          ),
+                                          child: Text(
+                                            revisado
+                                                ? 'Revisado'
+                                                : 'Pendiente',
+                                            maxLines: 1,
+                                            softWrap: false,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              height: 1,
+                                              fontWeight: FontWeight.w600,
+                                              color: revisado
+                                                  ? AppTheme.verdeOscuro
+                                                  : Colors.orange.shade800,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    const Divider(),
-                                    Text('Motivo: $motivo'),
-                                    const SizedBox(height: 6),
-                                    Text('Descripción: $descripcion'),
-                                    const SizedBox(height: 6),
-                                    Text('Usuario que reportó: $idUsuario'),
-                                    Text('Publicación: #$idPublicacion'),
-                                    Text(
-                                      'Fecha: ${formatearFecha(reporte['fecha_creacion'])}',
+                                    const SizedBox(height: 10),
+                                    const Divider(
+                                      color: AppTheme.verdeClaro,
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: 8),
+
+                                    construirDato('Motivo', motivo),
+                                    construirDato(
+                                      'Descripción',
+                                      descripcion,
+                                    ),
+                                    construirDato(
+                                      'Usuario que reportó',
+                                      idUsuario,
+                                    ),
+                                    construirDato(
+                                      'Publicación',
+                                      '#$idPublicacion',
+                                    ),
+                                    construirDato(
+                                      'Fecha',
+                                      formatearFecha(
+                                        reporte['fecha_creacion'],
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 8),
+                                    const Divider(
+                                      color: AppTheme.verdeClaro,
+                                    ),
+
                                     Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
+                                          CrossAxisAlignment.start,
                                       children: [
                                         TextButton.icon(
-                                          onPressed: () {
-                                            final id = int.tryParse(
-                                              reporte['id_publicacion']
-                                                  .toString(),
-                                            );
-
-                                            if (id != null) {
-                                              verPublicacion(id);
-                                            }
-                                          },
+                                          onPressed:
+                                              idPublicacionNumero == null
+                                                  ? null
+                                                  : () {
+                                                      verPublicacion(
+                                                        idPublicacionNumero,
+                                                      );
+                                                    },
                                           icon: const Icon(
                                             Icons.visibility_outlined,
                                           ),
-                                          label: const Text('Ver publicación'),
+                                          label: const Text(
+                                            'Ver publicación',
+                                          ),
                                           style: TextButton.styleFrom(
-                                            alignment: Alignment.centerLeft,
+                                            alignment:
+                                                Alignment.centerLeft,
                                           ),
                                         ),
 
@@ -486,102 +560,66 @@ debugPrint('¿Está retirada?: $publicacionRetirada');
                                               'Marcar como revisado',
                                             ),
                                             style: TextButton.styleFrom(
-                                              alignment: Alignment.centerLeft,
+                                              alignment:
+                                                  Alignment.centerLeft,
+                                              foregroundColor:
+                                                  AppTheme.verdeOscuro,
                                             ),
                                           ),
 
-                                        if (idReporte != null && !publicacionRetirada)
+                                        if (idReporte != null &&
+                                            idPublicacionNumero != null &&
+                                            !publicacionRetirada)
                                           TextButton.icon(
                                             onPressed: () async {
-                                              final id = int.tryParse(
-                                                reporte['id_publicacion']
-                                                    .toString(),
-                                              );
-
-                                              if (id == null) return;
-
                                               final confirmar =
                                                   await showDialog<bool>(
-                                                    context: context,
-                                                    builder: (context) =>
-                                                        AlertDialog(
-                                                          title: const Text(
-                                                            'Retirar publicación',
-                                                          ),
-                                                          content: const Text(
-                                                            '¿Estás seguro de que querés retirar esta publicación? '
-                                                            'Dejará de estar disponible, pero se conservará su registro.',
-                                                          ),
-                                                          actions: [
-                                                            TextButton(
-                                                              onPressed: () =>
-                                                                  Navigator.pop(
-                                                                    context,
-                                                                    false,
-                                                                  ),
-                                                              child: const Text(
-                                                                'Cancelar',
-                                                              ),
-                                                            ),
-                                                            TextButton(
-                                                              onPressed: () =>
-                                                                  Navigator.pop(
-                                                                    context,
-                                                                    true,
-                                                                  ),
-                                                              child: const Text(
-                                                                'Retirar',
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .red,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
+                                                context: context,
+                                                builder: (dialogContext) =>
+                                                    AlertDialog(
+                                                  title: const Text(
+                                                    'Retirar publicación',
+                                                  ),
+                                                  content: const Text(
+                                                    '¿Estás seguro de que querés retirar esta publicación? '
+                                                    'Dejará de estar disponible, pero se conservará su registro.',
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(
+                                                          dialogContext,
+                                                          false,
+                                                        );
+                                                      },
+                                                      child: const Text(
+                                                        'Cancelar',
+                                                      ),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(
+                                                          dialogContext,
+                                                          true,
+                                                        );
+                                                      },
+                                                      child: const Text(
+                                                        'Retirar',
+                                                        style: TextStyle(
+                                                          color: Colors.red,
                                                         ),
-                                                  );
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
 
                                               if (confirmar != true) return;
 
-                                              try {
-                                                await supabase
-                                                    .from('publicacion')
-                                                    .update({
-                                                      'estado': 'eliminada',
-                                                    })
-                                                    .eq('id_publicacion', id);
-
-                                                if (!mounted) return;
-
-                                                await cargarReportes();
-
-                                                if (!mounted) return;
-
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                          'La publicación fue retirada correctamente.',
-                                                        ),
-                                                      ),
-                                                    );
-                                              } catch (e) {
-                                                if (!mounted) return;
-
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                      'No se pudo retirar la publicación: $e',
-                                                    ),
-                                                  ),
-                                                );
-
-                                                debugPrint(
-                                                  'Error al retirar publicación: $e',
-                                                );
-                                              }
+                                              await retirarPublicacionDesdeReporte(
+                                                idPublicacionNumero,
+                                                idReporte,
+                                              );
                                             },
                                             icon: const Icon(
                                               Icons.delete_outline,
@@ -590,8 +628,36 @@ debugPrint('¿Está retirada?: $publicacionRetirada');
                                               'Retirar publicación',
                                             ),
                                             style: TextButton.styleFrom(
-                                              alignment: Alignment.centerLeft,
+                                              alignment:
+                                                  Alignment.centerLeft,
                                               foregroundColor: Colors.red,
+                                            ),
+                                          ),
+
+                                        if (publicacionRetirada)
+                                          const Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 8,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Icon(
+                                                  Icons.info_outline,
+                                                  size: 18,
+                                                  color: AppTheme
+                                                      .textoSecundario,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  'Publicación retirada',
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: AppTheme
+                                                        .textoSecundario,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                       ],
@@ -602,12 +668,7 @@ debugPrint('¿Está retirada?: $publicacionRetirada');
                             );
                           },
                         ),
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
+                ),
     );
   }
 }

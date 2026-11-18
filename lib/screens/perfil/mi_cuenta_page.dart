@@ -6,6 +6,10 @@ import 'editar_perfil_page.dart';
 import 'cambiar_correo_page.dart';
 import 'cambiar_contrasena_page.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../inicio/inicio_page.dart';
+
 class MiCuentaPage extends StatefulWidget {
   final int idUsuario;
   final String nombre;
@@ -79,6 +83,61 @@ class _MiCuentaPageState extends State<MiCuentaPage> {
     );
   }
 
+  Future<void> _cerrarSesion() async {
+  final confirmar = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Cerrar sesión'),
+      content: const Text(
+        '¿Estás seguro de que querés cerrar sesión?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context, false);
+          },
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context, true);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppTheme.verdePrincipal,
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Cerrar sesión'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmar != true || !mounted) return;
+
+  try {
+    await Supabase.instance.client.auth.signOut();
+
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const InicioPage(),
+      ),
+      (route) => false,
+    );
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('No se pudo cerrar la sesión. Intentá nuevamente.'),
+        backgroundColor: AppTheme.error,
+      ),
+    );
+  }
+}
+
   Widget _filaAcceso({
     required IconData icono,
     required String titulo,
@@ -113,6 +172,8 @@ class _MiCuentaPageState extends State<MiCuentaPage> {
     );
   }
 
+  @override
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -274,6 +335,27 @@ class _MiCuentaPageState extends State<MiCuentaPage> {
           ),
         ),
       ),
+
+      // BOTÓN CERRAR SESIÓN, FUERA DEL CONTENIDO
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: OutlinedButton.icon(
+            onPressed: _cerrarSesion,
+            icon: const Icon(Icons.logout),
+            label: const Text('Cerrar sesión'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.error,
+              side: const BorderSide(color: AppTheme.error),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
+
 }

@@ -49,138 +49,224 @@ class PanelAdministrador extends StatelessWidget {
     }
   }
 
+
+Widget _tarjetaAdministracion(
+  BuildContext context, {
+  required IconData icono,
+  required String titulo,
+  required String descripcion,
+  required Widget destino,
+}) {
+  return Card(
+    elevation: 1,
+    color: Colors.white,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+      side: BorderSide(
+        color: AppTheme.verdeClaro,
+      ),
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => destino,
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                color: AppTheme.verdeClaro,
+                borderRadius: BorderRadius.all(
+                  Radius.circular(12),
+                ),
+              ),
+              child: Icon(
+                icono,
+                color: AppTheme.verdePrincipal,
+                size: 26,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titulo,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textoPrincipal,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    descripcion,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.textoSecundario,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: AppTheme.textoSecundario,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 20),
-              Container(
-                width: 90,
-                height: 90,
-                decoration: const BoxDecoration(
-                  color: AppTheme.verdeClaro,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.admin_panel_settings,
-                  size: 50,
-                  color: AppTheme.verdePrincipal,
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Panel de administrador',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textoPrincipal,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Gestioná las cuentas y funciones administrativas de HUELLA.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: AppTheme.textoSecundario),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const UsuariosPage(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.people),
-                label: const Text('Consultar usuarios'),
-              ),
-              const SizedBox(height: 12),
+   
+body: SafeArea(
+  child: SingleChildScrollView(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 20),
 
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const PublicacionesAdministradorPage(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.pets),
-                label: const Text('Gestionar publicaciones'),
-              ),
-              const SizedBox(height: 12),
+        // Encabezado
+        const Icon(
+          Icons.admin_panel_settings_outlined,
+          size: 65,
+          color: AppTheme.verdePrincipal,
+        ),
 
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ReportesAdministradorPage(),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.flag),
-                label: const Text('Gestionar reportes'),
-              ),
-              const SizedBox(height: 12),
+        const SizedBox(height: 16),
 
-              OutlinedButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (dialogContext) {
-                      return AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        title: const Text(
-                          'Cerrar sesión',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textoPrincipal,
-                          ),
-                        ),
-                        content: const Text(
-                          '¿Querés cerrar tu sesión de HUELLA?',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: AppTheme.textoSecundario,
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(dialogContext);
-                            },
-                            child: const Text('Cancelar'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(dialogContext);
-                              cerrarSesion(context);
-                            },
-                            child: const Text('Cerrar sesión'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                icon: const Icon(Icons.logout),
-                label: const Text('Cerrar sesión'),
-              ),
-            ],
+        const Text(
+          'Panel de administración',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 25,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textoPrincipal,
           ),
         ),
-      ),
+
+        const SizedBox(height: 8),
+
+        const Text(
+          'Gestioná HUELLA desde un solo lugar.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
+            color: AppTheme.textoSecundario,
+          ),
+        ),
+
+        const SizedBox(height: 32),
+
+        // Gestión de usuarios
+        _tarjetaAdministracion(
+          context,
+          icono: Icons.people_outline,
+          titulo: 'Usuarios',
+          descripcion: 'Consultar y gestionar cuentas.',
+          destino: const UsuariosPage(),
+        ),
+
+        const SizedBox(height: 14),
+
+        // Gestión de publicaciones
+        _tarjetaAdministracion(
+          context,
+          icono: Icons.pets_outlined,
+          titulo: 'Publicaciones',
+          descripcion: 'Consultar y gestionar publicaciones.',
+          destino: const PublicacionesAdministradorPage(),
+        ),
+
+        const SizedBox(height: 14),
+
+        // Gestión de reportes
+        _tarjetaAdministracion(
+          context,
+          icono: Icons.flag_outlined,
+          titulo: 'Reportes',
+          descripcion: 'Revisar reportes realizados por usuarios.',
+          destino: const ReportesAdministradorPage(),
+        ),
+
+
+        const SizedBox(height: 30),
+
+
+
+        // Cerrar sesión
+        OutlinedButton.icon(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (dialogContext) {
+                return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  title: const Text(
+                    'Cerrar sesión',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textoPrincipal,
+                    ),
+                  ),
+                  content: const Text(
+                    '¿Querés cerrar tu sesión de HUELLA?',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppTheme.textoSecundario,
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                      },
+                      child: const Text('Cancelar'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(dialogContext);
+                        cerrarSesion(context);
+                      },
+                      child: const Text('Cerrar sesión'),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+          icon: const Icon(Icons.logout),
+          label: const Text('Cerrar sesión'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppTheme.error,
+            side: const BorderSide(color: AppTheme.error),
+            padding: const EdgeInsets.symmetric(vertical: 15),
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+
     );
   }
 }

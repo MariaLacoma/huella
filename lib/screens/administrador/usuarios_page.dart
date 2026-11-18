@@ -153,140 +153,224 @@ class _UsuariosPageState extends State<UsuariosPage> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Volver'),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: 80,
-                height: 80,
-                decoration: const BoxDecoration(
-                  color: AppTheme.verdeClaro,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.people,
-                  size: 45,
-                  color: AppTheme.verdePrincipal,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Usuarios registrados',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textoPrincipal,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Usuarios registrados en HUELLA',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 15, color: AppTheme.textoSecundario),
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: cargando
-                    ? const Center(child: CircularProgressIndicator())
-                    : error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 42,
-                              color: Colors.red,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(error!, textAlign: TextAlign.center),
-                            const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              onPressed: cargarUsuarios,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Reintentar'),
-                            ),
-                          ],
-                        ),
-                      )
-                    : usuarios.isEmpty
-                    ? const Center(
-                        child: Text('Todavía no hay usuarios registrados.'),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: cargarUsuarios,
-                        child: ListView.builder(
-                          itemCount: usuarios.length,
-                          itemBuilder: (context, index) {
-                            final usuario = usuarios[index];
 
-                            return Card(
-                              child: ListTile(
-                                leading: const CircleAvatar(
-                                  backgroundColor: AppTheme.verdeClaro,
-                                  child: Icon(
-                                    Icons.person,
-                                    color: AppTheme.verdePrincipal,
-                                  ),
-                                ),
-                                title: Text(
-                                  usuario['nombre']?.toString() ?? 'Sin nombre',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: AppTheme.textoPrincipal,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  '${usuario['email'] ?? 'Sin correo'}\n'
-                                  'Rol: ${usuario['tipo'] ?? 'Sin rol'}'
-                                  ' · Estado: ${usuario['estado'] ?? 'Sin estado'}',
-                                  style: const TextStyle(
-                                    color: AppTheme.textoSecundario,
-                                  ),
-                                ),
-                                isThreeLine: true,
-                               trailing: usuario['tipo'] == 'usuario'
-    ? IconButton(
-        icon: Icon(
-          usuario['estado'] == 'activo'
-              ? Icons.block
-              : Icons.check_circle,
-          color: usuario['estado'] == 'activo'
-              ? Colors.red
-              : Colors.green,
-        ),
-        tooltip: usuario['estado'] == 'activo'
-            ? 'Bloquear usuario'
-            : 'Habilitar usuario',
-        onPressed: () => cambiarEstadoUsuario(usuario),
-      )
-    : null,
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Usuarios registrados'),
+      centerTitle: true,
+    ),
+    body: SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: cargando
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    )
+                  : error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 42,
+                                color: Colors.red,
                               ),
-                            );
-                          },
-                        ),
-                      ),
-              ),
-            ],
-          ),
+                              const SizedBox(height: 12),
+                              Text(
+                                error!,
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                onPressed: cargarUsuarios,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Reintentar'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : usuarios.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Todavía no hay usuarios registrados.',
+                              ),
+                            )
+                          : RefreshIndicator(
+                              onRefresh: cargarUsuarios,
+                              child: ListView.builder(
+                                itemCount: usuarios.length,
+                                itemBuilder: (context, index) {
+                                  final usuario = usuarios[index];
+
+                                  return Card(
+                                    elevation: 1,
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      side: const BorderSide(
+                                        color: AppTheme.verdeClaro,
+                                      ),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(14),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          const CircleAvatar(
+                                            radius: 23,
+                                            backgroundColor:
+                                                AppTheme.verdeClaro,
+                                            child: Icon(
+                                              Icons.person_outline,
+                                              color: AppTheme.verdePrincipal,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  usuario['nombre']
+                                                          ?.toString() ??
+                                                      'Sin nombre',
+                                                  style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 15,
+                                                    color: AppTheme
+                                                        .textoPrincipal,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  usuario['email']
+                                                          ?.toString() ??
+                                                      'Sin correo',
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                    color: AppTheme
+                                                        .textoSecundario,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 10),
+                                                Wrap(
+                                                  spacing: 8,
+                                                  runSpacing: 6,
+                                                  children: [
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 9,
+                                                        vertical: 5,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: AppTheme
+                                                            .verdeClaro,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(20),
+                                                      ),
+                                                      child: Text(
+                                                        (usuario['tipo']
+                                                                        ?.toString()
+                                                                        .toLowerCase() ==
+                                                                    'admin' ||
+                                                                usuario['tipo']
+                                                                        ?.toString()
+                                                                        .toLowerCase() ==
+                                                                    'administrador')
+                                                            ? 'Administrador'
+                                                            : 'Usuario',
+                                                        style: const TextStyle(
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: AppTheme
+                                                              .verdeOscuro,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 9,
+                                                        vertical: 5,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: usuario[
+                                                                    'estado'] ==
+                                                                'activo'
+                                                            ? AppTheme
+                                                                .verdeClaro
+                                                            : const Color(
+                                                                0xFFFCEBEA,
+                                                              ),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(20),
+                                                      ),
+                                                      child: Text(
+                                                        'Estado: ${usuario['estado']?.toString() ?? 'Sin estado'}',
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: usuario[
+                                                                      'estado'] ==
+                                                                  'activo'
+                                                              ? AppTheme
+                                                                  .verdeOscuro
+                                                              : AppTheme.error,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (usuario['tipo'] == 'usuario')
+                                            IconButton(
+                                              icon: Icon(
+                                                usuario['estado'] == 'activo'
+                                                    ? Icons.block
+                                                    : Icons.check_circle,
+                                                color:
+                                                    usuario['estado'] ==
+                                                            'activo'
+                                                        ? AppTheme.error
+                                                        : AppTheme
+                                                            .verdePrincipal,
+                                              ),
+                                              tooltip:
+                                                  usuario['estado'] == 'activo'
+                                                      ? 'Bloquear usuario'
+                                                      : 'Habilitar usuario',
+                                              onPressed: () =>
+                                                  cambiarEstadoUsuario(usuario),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
+}
+

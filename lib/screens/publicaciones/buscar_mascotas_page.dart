@@ -8,8 +8,13 @@ import '../../theme/app_theme.dart';
 
 class BuscarMascotasPage extends StatefulWidget {
   final int? idUsuario;
+  final VoidCallback onVolverInicio;
 
-  const BuscarMascotasPage({super.key, this.idUsuario});
+  const BuscarMascotasPage({
+    super.key,
+    this.idUsuario,
+    required this.onVolverInicio,
+  });
 
   @override
   State<BuscarMascotasPage> createState() => _BuscarMascotasPageState();
@@ -377,7 +382,7 @@ class _BuscarMascotasPageState extends State<BuscarMascotasPage> {
       urlFoto,
       width: double.infinity,
       height: 200,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) {
         return const SizedBox(
           height: 200,
@@ -397,13 +402,15 @@ class _BuscarMascotasPageState extends State<BuscarMascotasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.fondo,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Buscar mascotas'),
-      ),
+     appBar: AppBar(
+  leading: IconButton(
+    icon: const Icon(Icons.arrow_back),
+    onPressed: widget.onVolverInicio,
+  ),
+  title: const Text('Buscar mascotas'),
+  backgroundColor: AppTheme.verdePrincipal,
+  foregroundColor: Colors.white,
+),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -690,146 +697,127 @@ class _BuscarMascotasPageState extends State<BuscarMascotasPage> {
               ),
             ],
 
-            if (!cargando &&
-                mensajeError == null &&
-                publicacionesFiltradas.isEmpty)
-              Center(
-                child: Text(
-                  publicaciones.isEmpty
-                      ? 'No hay publicaciones para mostrar.'
-                      : 'No se encontraron mascotas con esos criterios.',
-                  textAlign: TextAlign.center,
+         
+if (!cargando &&
+    mensajeError == null &&
+    publicacionesFiltradas.isNotEmpty)
+  ListView.builder(
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    itemCount: publicacionesFiltradas.length,
+    itemBuilder: (context, index) {
+      final publicacion = publicacionesFiltradas[index];
+
+      final tipo = (publicacion['tipo'] ?? '').toString();
+      final tipoEsPerdida = tipo.toLowerCase() == 'perdida';
+
+      return Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () async {
+            final resultado = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetallePublicacionPage(
+                  publicacion: publicacion,
+                  idUsuario: widget.idUsuario,
+                  tipoUsuario: 'usuario',
                 ),
               ),
+            );
 
-            if (!cargando &&
-                mensajeError == null &&
-                publicacionesFiltradas.isNotEmpty)
-              SizedBox(
-                height: 430,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: publicacionesFiltradas.length,
-                  itemBuilder: (context, index) {
-                    final publicacion = publicacionesFiltradas[index];
+            if (resultado == true && mounted) {
+              await buscarPublicaciones();
+            }
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              construirFoto(publicacion),
 
-                    final tipo = (publicacion['tipo'] ?? '').toString();
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      obtenerNombreMascota(publicacion),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textoPrincipal,
+                      ),
+                    ),
 
-                    final tipoEsPerdida = tipo.toLowerCase() == 'perdida';
+                    const SizedBox(height: 8),
 
-                    return SizedBox(
-                      width: 300,
-                      child: Card(
-                        margin: const EdgeInsets.only(right: 12),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          onTap: () async {
-                            final resultado = await Navigator.push<bool>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => DetallePublicacionPage(
-                                  publicacion: publicacion,
-                                  idUsuario: widget.idUsuario,
-                                ),
-                              ),
-                            );
-
-                            if (resultado == true && mounted) {
-                              await buscarPublicaciones();
-                            }
-                          },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              construirFoto(publicacion),
-
-                              Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      obtenerNombreMascota(publicacion),
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.textoPrincipal,
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 6),
-
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 5,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: tipoEsPerdida
-                                                ? Colors.orange.shade100
-                                                : Colors.green.shade100,
-                                            borderRadius: BorderRadius.circular(
-                                              20,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            tipo.toUpperCase(),
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: tipoEsPerdida
-                                                  ? Colors.orange.shade800
-                                                  : Colors.green.shade800,
-                                            ),
-                                          ),
-                                        ),
-
-                                        const SizedBox(width: 10),
-
-                                        Text(
-                                          (publicacion['especie'] ?? '')
-                                              .toString(),
-                                          style: const TextStyle(
-                                            color: AppTheme.textoSecundario,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    const SizedBox(height: 10),
-
-                                    Text(
-                                      (publicacion['descripcion'] ?? '')
-                                          .toString(),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: AppTheme.textoPrincipal,
-                                      ),
-                                    ),
-
-                                    const SizedBox(height: 10),
-
-                                    Text(
-                                      'Fecha: ${(publicacion['fecha'] ?? '').toString()}',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: AppTheme.textoSecundario,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: tipoEsPerdida
+                                ? Colors.orange.shade100
+                                : Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            tipo.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: tipoEsPerdida
+                                  ? Colors.orange.shade800
+                                  : Colors.green.shade800,
+                            ),
                           ),
                         ),
+
+                        const SizedBox(width: 10),
+
+                        Text(
+                          (publicacion['especie'] ?? '').toString(),
+                          style: const TextStyle(
+                            color: AppTheme.textoSecundario,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Text(
+                      (publicacion['descripcion'] ?? '').toString(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppTheme.textoPrincipal,
                       ),
-                    );
-                  },
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Text(
+                      'Fecha: ${(publicacion['fecha'] ?? '').toString()}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textoSecundario,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ],
+          ),
+        ),
+      );
+    },
+  ),
+
           ],
         ),
       ),

@@ -1,0 +1,20 @@
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
+
+# Dependencias de Node
+node_modules/
+
+# Archivos privados de Supabase
+supabase/.temp/
+supabase/.branches/
+supabase/functions/.env
+supabase/functions/**/.env
+
+# Configuración local de VS Code
+.vscode/
