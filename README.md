@@ -1,17 +1,3 @@
-# huella
+# HUELLA 🐾
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+HUELLA es una aplicación móvil desarrollada para facilitar la búsqueda y recuperación de mascotas perdidas o encontradas. Permite publicar información sobre animales, consultar y filtrar publicaciones, registrar avistamientos y facilitar el contacto entre usuarios. Además, incorpora inteligencia artificial para analizar fotografías de mascotas y sugerir posibles coincidencias entre publicaciones. Cuenta con funcionalidades para usuarios, visitantes y administradores, promoviendo la colaboración de la comunidad para lograr el reencuentro de las mascotas con sus familias.
